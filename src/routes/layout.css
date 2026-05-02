@@ -1,3 +1,62 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+@theme {
+  /* Luna Brand Palette based on Logo */
+  --color-luna-base: #0B0914; /* Extremely deep navy/purple for background */
+  --color-luna-surface: rgba(30, 20, 60, 0.4); /* Glassmorphism surface */
+  --color-luna-blue: #0066FF; /* The deep blue in the LUNA text */
+  --color-luna-neon: #00F0FF; /* The bright cyan/blue highlight */
+  --color-luna-purple: #8A2BE2; /* The rich purple in the moon gradient */
+  --color-luna-gold: #D4AF37; /* The golden nodes and subtext */
+  
+  --color-luna-text-main: #FFFFFF;
+  --color-luna-text-muted: #A09BBA;
+
+  /* Fonts - Recommend Poppins or Montserrat for this geometric look */
+  --font-sans: 'Montserrat', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-luna-base text-luna-text-main antialiased overflow-x-hidden;
+    background: linear-gradient(125deg, #0B0914 0%, #1E143C 50%, #0B0914 100%);
+    background-size: 400% 400%;
+    animation: mesh-gradient 15s ease infinite;
+  }
+}
+
+@keyframes mesh-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@layer utilities {
+  /* The signature Luna Glass effect */
+  .luna-glass {
+    @apply bg-luna-surface backdrop-blur-lg border border-white/5 shadow-2xl;
+  }
+  
+  /* The logo's gradient mapped to text */
+  .text-luna-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-luna-neon via-luna-purple to-luna-blue;
+  }
+
+  /* Golden accent gradient for special highlights */
+  .text-gold-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#FFD700] to-[#D4AF37];
+  }
+
+  /* Glowing button utility */
+  .btn-luna-primary {
+    @apply bg-luna-blue text-white font-bold py-3 px-6 rounded-full transition-all duration-300
+           hover:bg-luna-purple hover:shadow-[0_0_20px_rgba(138,43,226,0.6)] active:scale-95;
+  }
+  
+  .btn-luna-gold {
+    @apply bg-luna-gold text-luna-base font-bold py-3 px-6 rounded-full transition-all duration-300
+           hover:brightness-110 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] active:scale-95;
+  }
+}
