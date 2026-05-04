@@ -1,31 +1,25 @@
 <script lang="ts">
-  import HeroCodeCard from '$lib/components/HeroCodeCard.svelte';
-  import StarField    from '$lib/components/StarField.svelte';
+  import HeroCodeCard   from '$lib/components/HeroCodeCard.svelte';
+  import StarField      from '$lib/components/StarField.svelte';
+  import ServicesGrid   from '$lib/components/ServicesGrid.svelte';
+  import PortfolioGrid  from '$lib/components/PortfolioGrid.svelte';
 </script>
 
 <!-- ─── Hero Section ───────────────────────────────────────────────────
-  position:relative is required — StarField uses position:absolute inset-0
-  so it needs a positioned ancestor to fill correctly.
-
-  overflow-hidden clips both the StarField canvas and the old orbs at the
-  section boundary, preventing horizontal scroll.
+  position:relative required — StarField uses absolute inset-0.
+  overflow-hidden clips the canvas + aura orbs at section boundary.
 ──────────────────────────────────────────────────────────────────────── -->
 <section
   class="relative min-h-[90vh] flex items-center px-6 lg:px-32 overflow-hidden"
   aria-label="Hero — Luna Labs introduction"
 >
-
-  <!--
-    StarField sits at z-0, behind everything.
-    It renders the twinkling star canvas + three drifting aura orbs.
-    aria-hidden is set on the component's root element internally.
-  -->
+  <!-- StarField: twinkling star canvas + drifting aura orbs — z-0 -->
   <StarField />
 
-  <!-- ── Main Grid — z-10 keeps it above the StarField layer ─────── -->
+  <!-- Main grid — z-10 keeps it above StarField -->
   <div class="relative z-10 grid lg:grid-cols-2 gap-16 items-center w-full max-w-7xl mx-auto">
 
-    <!-- ── Left Column: Copy ──────────────────────────────────────── -->
+    <!-- ── Left: Copy ───────────────────────────────────────────── -->
     <div class="space-y-8">
 
       <!-- Brand badge -->
@@ -40,31 +34,21 @@
         </div>
       </div>
 
-      <!-- h1 — single per page, gradient span is purely visual -->
       <h1 class="text-6xl lg:text-8xl font-black leading-[1.1] tracking-tight">
         Building <br />
         <span class="text-luna-gradient">Systems That Flow.</span>
       </h1>
 
-      <!-- Subtext -->
       <p class="text-luna-text-muted text-lg lg:text-xl max-w-lg leading-relaxed font-medium">
         We design and develop premium full-stack platforms for businesses looking
         to scale their digital presence with precision.
       </p>
 
-      <!-- CTAs -->
       <div class="flex flex-wrap gap-6 pt-4">
-        <!--
-          <a> not <button> — scrolling to a section is navigation.
-          TODO Ticket 6: swap to <button> opening a modal when form is built.
-        -->
-        <a
-          href="#quote"
-          class="btn-luna-primary shadow-lg shadow-luna-blue/20 inline-block"
-        >
+        <!-- TODO Ticket Phase 2: swap to <button> opening modal when form is built -->
+        <a href="#quote" class="btn-luna-primary shadow-lg shadow-luna-blue/20 inline-block">
           Start a Project
         </a>
-
         <a
           href="#portfolio"
           class="group flex items-center gap-2 text-luna-gold font-bold tracking-wide hover:text-white transition-colors focus-visible:outline-none focus-visible:text-luna-neon"
@@ -75,31 +59,18 @@
       </div>
     </div>
 
-    <!-- ── Right Column: Animated Terminal ───────────────────────── -->
-    <!--
-      hidden lg:block — terminal is decorative on mobile.
-      aria-hidden because the terminal content is purely visual/branding,
-      not actual navigable content.
-    -->
+    <!-- ── Right: Animated Terminal ─────────────────────────────── -->
     <div class="relative hidden lg:block" aria-hidden="true">
-      <!-- Extra ambient glow specifically behind the terminal card -->
       <div
         class="absolute -inset-20 bg-luna-purple/10 blur-[100px] rounded-full pointer-events-none"
         style="animation: pulse 4s ease-in-out infinite alternate;"
       ></div>
-
-      <!-- Hover-lift wrapper -->
       <div class="relative transform hover:scale-[1.02] transition-transform duration-700 ease-out">
         <HeroCodeCard />
       </div>
-
-      <!-- Decorative gold corner accent -->
       <div
         class="absolute -bottom-6 -right-6 w-32 h-32 rounded-br-3xl pointer-events-none"
-        style="
-          border-bottom: 1px solid rgba(212,175,55,0.2);
-          border-right:  1px solid rgba(212,175,55,0.2);
-        "
+        style="border-bottom: 1px solid rgba(212,175,55,0.2); border-right: 1px solid rgba(212,175,55,0.2);"
       ></div>
     </div>
 
@@ -107,53 +78,33 @@
 </section>
 
 
-<!-- ─────────────────────────────────────────────────────────────────────
-  TODO Ticket 3 (Issue #8): Services Section
-  Replace placeholder with <ServicesGrid /> component.
-  id="services" is the Navbar anchor target.
+<!-- ─── Services Section (Ticket #7 / Issue #8) ────────────────────────
+  ServicesGrid is a self-contained section component — it owns its own
+  <section> tag, heading, and id="services" anchor.
 ──────────────────────────────────────────────────────────────────────── -->
-<section
-  id="services"
-  class="min-h-screen px-6 lg:px-32 py-24"
-  style="border-top: 1px solid var(--color-luna-border);"
-  aria-label="Services — placeholder"
->
-  <h2 class="text-4xl font-bold tracking-tighter uppercase opacity-20">
-    Architectural Services
-  </h2>
-  <!-- TODO Ticket #8: <ServicesGrid /> goes here -->
-</section>
+<ServicesGrid />
 
 
-<!-- ─────────────────────────────────────────────────────────────────────
-  TODO Ticket 3 (Issue #8): Portfolio Section
-  Replace placeholder with <PortfolioGrid /> component.
+<!-- ─── Portfolio Section (Ticket #7 / Issue #8) ──────────────────────
+  Same pattern — PortfolioGrid owns its <section> tag and id="portfolio".
 ──────────────────────────────────────────────────────────────────────── -->
-<section
-  id="portfolio"
-  class="min-h-screen px-6 lg:px-32 py-24"
-  style="border-top: 1px solid var(--color-luna-border);"
-  aria-label="Portfolio — placeholder"
->
-  <h2 class="text-4xl font-bold tracking-tighter uppercase opacity-20">
-    Concept Portfolio
-  </h2>
-  <!-- TODO Ticket #8: <PortfolioGrid /> goes here -->
-</section>
+<PortfolioGrid />
 
 
-<!-- ─────────────────────────────────────────────────────────────────────
-  TODO Ticket 6 (Issue #9 / Phase 2): Quote / Lead Capture Section
-  id="quote" is the Hero "Start a Project" CTA target.
+<!-- ─── Quote / Lead Capture (TODO Phase 2 — Ticket #9) ───────────────
+  id="quote" is the anchor target for the Hero "Start a Project" CTA.
+  TODO Phase 2: replace h2 placeholder with <RequestQuoteForm />.
 ──────────────────────────────────────────────────────────────────────── -->
 <section
   id="quote"
-  class="min-h-[60vh] px-6 lg:px-32 py-24"
+  class="min-h-[60vh] px-6 lg:px-32 py-24 flex items-center"
   style="border-top: 1px solid var(--color-luna-border);"
   aria-label="Request a quote — placeholder"
 >
-  <h2 class="text-4xl font-bold tracking-tighter uppercase opacity-20">
-    Start a Project
-  </h2>
-  <!-- TODO Ticket #9 Phase 2: <RequestQuoteForm /> goes here -->
+  <div class="max-w-7xl mx-auto w-full">
+    <h2 class="text-4xl font-bold tracking-tighter uppercase opacity-20">
+      Start a Project
+    </h2>
+    <!-- TODO Phase 2 Ticket #9: <RequestQuoteForm /> goes here -->
+  </div>
 </section>
