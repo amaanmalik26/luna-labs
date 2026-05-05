@@ -1,28 +1,29 @@
 <script lang="ts">
-  import HeroCodeCard   from '$lib/components/HeroCodeCard.svelte';
-  import StarField      from '$lib/components/StarField.svelte';
-  import ServicesGrid   from '$lib/components/ServicesGrid.svelte';
-  import PortfolioGrid  from '$lib/components/PortfolioGrid.svelte';
+  import HeroCodeCard      from '$lib/components/HeroCodeCard.svelte';
+  import StarField         from '$lib/components/StarField.svelte';
+  import ServicesGrid      from '$lib/components/ServicesGrid.svelte';
+  import PortfolioGrid     from '$lib/components/PortfolioGrid.svelte';
+  import RequestQuoteForm  from '$lib/components/RequestQuoteForm.svelte';
 </script>
 
-<!-- ─── Hero Section ───────────────────────────────────────────────────
-  position:relative required — StarField uses absolute inset-0.
-  overflow-hidden clips the canvas + aura orbs at section boundary.
-──────────────────────────────────────────────────────────────────────── -->
+<svelte:head>
+  <title>Luna Labs — Digital Arc Architects</title>
+  <meta name="description" content="Luna Labs builds premium full-stack platforms, UI/UX systems, and custom SaaS products for businesses ready to scale their digital presence." />
+  <meta property="og:title"       content="Luna Labs — Digital Arc Architects" />
+  <meta property="og:description" content="Premium web systems, UI/UX design, and custom SaaS built with precision." />
+  <meta property="og:type"        content="website" />
+</svelte:head>
+
+<!-- ─── Hero ───────────────────────────────────────────────────────── -->
 <section
   class="relative min-h-[90vh] flex items-center px-6 lg:px-32 overflow-hidden"
   aria-label="Hero — Luna Labs introduction"
 >
-  <!-- StarField: twinkling star canvas + drifting aura orbs — z-0 -->
   <StarField />
 
-  <!-- Main grid — z-10 keeps it above StarField -->
   <div class="relative z-10 grid lg:grid-cols-2 gap-16 items-center w-full max-w-7xl mx-auto">
 
-    <!-- ── Left: Copy ───────────────────────────────────────────── -->
     <div class="space-y-8">
-
-      <!-- Brand badge -->
       <div class="flex items-center gap-4" aria-hidden="true">
         <div class="relative">
           <span class="text-5xl drop-shadow-[0_0_15px_rgba(138,43,226,0.8)]">🌙</span>
@@ -45,7 +46,6 @@
       </p>
 
       <div class="flex flex-wrap gap-6 pt-4">
-        <!-- TODO Ticket Phase 2: swap to <button> opening modal when form is built -->
         <a href="#quote" class="btn-luna-primary shadow-lg shadow-luna-blue/20 inline-block">
           Start a Project
         </a>
@@ -59,12 +59,8 @@
       </div>
     </div>
 
-    <!-- ── Right: Animated Terminal ─────────────────────────────── -->
     <div class="relative hidden lg:block" aria-hidden="true">
-      <div
-        class="absolute -inset-20 bg-luna-purple/10 blur-[100px] rounded-full pointer-events-none"
-        style="animation: pulse 4s ease-in-out infinite alternate;"
-      ></div>
+      <div class="absolute -inset-20 bg-luna-purple/10 blur-[100px] rounded-full pointer-events-none"></div>
       <div class="relative transform hover:scale-[1.02] transition-transform duration-700 ease-out">
         <HeroCodeCard />
       </div>
@@ -77,34 +73,11 @@
   </div>
 </section>
 
-
-<!-- ─── Services Section (Ticket #7 / Issue #8) ────────────────────────
-  ServicesGrid is a self-contained section component — it owns its own
-  <section> tag, heading, and id="services" anchor.
-──────────────────────────────────────────────────────────────────────── -->
+<!-- ─── Services (Issue #8 — complete) ─────────────────────────────── -->
 <ServicesGrid />
 
-
-<!-- ─── Portfolio Section (Ticket #7 / Issue #8) ──────────────────────
-  Same pattern — PortfolioGrid owns its <section> tag and id="portfolio".
-──────────────────────────────────────────────────────────────────────── -->
+<!-- ─── Portfolio (Issue #8 — complete) ────────────────────────────── -->
 <PortfolioGrid />
 
-
-<!-- ─── Quote / Lead Capture (TODO Phase 2 — Ticket #9) ───────────────
-  id="quote" is the anchor target for the Hero "Start a Project" CTA.
-  TODO Phase 2: replace h2 placeholder with <RequestQuoteForm />.
-──────────────────────────────────────────────────────────────────────── -->
-<section
-  id="quote"
-  class="min-h-[60vh] px-6 lg:px-32 py-24 flex items-center"
-  style="border-top: 1px solid var(--color-luna-border);"
-  aria-label="Request a quote — placeholder"
->
-  <div class="max-w-7xl mx-auto w-full">
-    <h2 class="text-4xl font-bold tracking-tighter uppercase opacity-20">
-      Start a Project
-    </h2>
-    <!-- TODO Phase 2 Ticket #9: <RequestQuoteForm /> goes here -->
-  </div>
-</section>
+<!-- ─── Quote Form (Issues #12, #14, #15 — complete) ──────────────── -->
+<RequestQuoteForm />
