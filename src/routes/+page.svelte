@@ -1,9 +1,10 @@
 <script lang="ts">
-  import HeroCodeCard      from '$lib/components/HeroCodeCard.svelte';
-  import StarField         from '$lib/components/StarField.svelte';
-  import ServicesGrid      from '$lib/components/ServicesGrid.svelte';
-  import PortfolioGrid     from '$lib/components/PortfolioGrid.svelte';
-  import RequestQuoteForm  from '$lib/components/RequestQuoteForm.svelte';
+  import HeroCodeCard     from '$lib/components/HeroCodeCard.svelte';
+  import StarField        from '$lib/components/StarField.svelte';
+  import ServicesGrid     from '$lib/components/ServicesGrid.svelte';
+  import PortfolioGrid    from '$lib/components/PortfolioGrid.svelte';
+  import RequestQuoteForm from '$lib/components/RequestQuoteForm.svelte';
+  import ScrollReveal     from '$lib/components/ScrollReveal.svelte';
 </script>
 
 <svelte:head>
@@ -23,7 +24,15 @@
 
   <div class="relative z-10 grid lg:grid-cols-2 gap-16 items-center w-full max-w-7xl mx-auto">
 
-    <div class="space-y-8">
+    <!-- Left: copy — fades up on initial page load -->
+    <!--
+      Hero content uses a CSS animation directly (not ScrollReveal) because
+      it's visible immediately on page load — IntersectionObserver fires
+      instantly for in-viewport elements, making the animation feel wrong.
+      A CSS animation with a short delay feels like a purposeful entrance.
+    -->
+    <div class="space-y-8 hero-enter">
+
       <div class="flex items-center gap-4" aria-hidden="true">
         <div class="relative">
           <span class="text-5xl drop-shadow-[0_0_15px_rgba(138,43,226,0.8)]">🌙</span>
@@ -59,7 +68,8 @@
       </div>
     </div>
 
-    <div class="relative hidden lg:block" aria-hidden="true">
+    <!-- Right: terminal — delayed entrance -->
+    <div class="relative hidden lg:block hero-enter" style="animation-delay: 300ms;" aria-hidden="true">
       <div class="absolute -inset-20 bg-luna-purple/10 blur-[100px] rounded-full pointer-events-none"></div>
       <div class="relative transform hover:scale-[1.02] transition-transform duration-700 ease-out">
         <HeroCodeCard />
@@ -73,11 +83,42 @@
   </div>
 </section>
 
-<!-- ─── Services (Issue #8 — complete) ─────────────────────────────── -->
+<!-- ─── Services ─────────────────────────────────────────────────── -->
 <ServicesGrid />
 
-<!-- ─── Portfolio (Issue #8 — complete) ────────────────────────────── -->
+<!-- ─── Portfolio ────────────────────────────────────────────────── -->
 <PortfolioGrid />
 
-<!-- ─── Quote Form (Issues #12, #14, #15 — complete) ──────────────── -->
+<!-- ─── Quote Form ───────────────────────────────────────────────── -->
 <RequestQuoteForm />
+
+<style>
+  /*
+   * Hero entrance animation — runs once on page load.
+   * Animates opacity + translateY. GPU composited — no layout cost.
+   * Uses animation-fill-mode: both so the element starts at the "from"
+   * state (invisible, shifted) before the animation begins.
+   */
+  .hero-enter {
+    animation: hero-fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes hero-fade-up {
+    from {
+      opacity:   0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity:   1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-enter {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
