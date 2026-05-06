@@ -2,58 +2,57 @@
  * src/lib/server/supabase.ts
  *
  * SERVER-ONLY Supabase client factory.
+ * Anything in $lib/server/ cannot be imported by client code.
  *
- * WHY THIS FILE EXISTS IN /server/:
- * SvelteKit enforces that anything in $lib/server cannot be imported
- * by client-side code. If you accidentally import this in a .svelte
- * component, the build fails with a clear error. This prevents the
- * SERVICE_ROLE_KEY from ever leaking to the browser bundle.
+ * ── NEW SUPABASE KEY SYSTEM ──────────────────────────────────────────
+ * Supabase now issues "publishable keys" (sb_publishable_...) instead of
+ * the legacy "anon key" (eyJ...). Your .env needs:
  *
- * TWO CLIENTS — WHY:
+ *   SUPABASE_URL              = https://xxx.supabase.co
+ *   SUPABASE_PUBLISHABLE_KEY  = sb_publishable_...
+ *   SUPABASE_SECRET_KEY       = sb_secret_...
  *
- * 1. createAnonClient() — uses SUPABASE_ANON_KEY
- *    Used by the public /api/leads endpoint. The anon key respects
- *    Row Level Security — it can only INSERT into leads (per our policy),
- *    never SELECT. Safe to use in API routes that the public triggers.
+ * Dashboard → Settings → API → Project API Keys
  *
- * 2. createAdminClient() — uses SUPABASE_SERVICE_ROLE_KEY
- *    Bypasses RLS entirely. Only used in admin-authenticated server routes
- *    where we've already verified the user is the admin via Supabase Auth.
- *    NEVER expose this key to the browser.
- *
- * SETUP:
- *   Copy .env.example to .env and fill in your Supabase project values:
- *   SUPABASE_URL             = https://YOUR_PROJECT.supabase.co
- *   SUPABASE_ANON_KEY        = eyJ...
- *   SUPABASE_SERVICE_ROLE_KEY = eyJ...
+ * ── WHY USE SECRET KEY FOR /api/leads ────────────────────────────────
+ * The form API route is server-side trusted code. It has already:
+ *   - Validated input with Zod
+ *   - Rate-limited by IP
+ * Using the secret key bypasses RLS cleanly. The publishable key + RLS
+ * is unreliable on server routes with the new key format because the
+ * new publishable key JWT claims differ from the legacy anon JWT.
+ * RLS still protects direct browser → Supabase calls.
  */
 
 import { createClient } from '@supabase/supabase-js';
 import {
   SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_SECRET_KEY,
 } from '$env/static/private';
 import type { Database } from '$lib/types/database';
 
 /**
- * Public-facing anon client.
- * Respects RLS — safe for use in routes that handle untrusted input.
- * Used by: /api/leads POST
+ * Publishable client — respects RLS.
+ * Use for reads that mirror logged-out user access.
  */
-export function createAnonClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+export function createPublicClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: { persistSession: false },
   });
 }
 
 /**
- * Service role client — bypasses RLS.
- * Used by: /admin/** routes (after auth verification).
- * NEVER call this in a route that anonymous users can reach.
+ * Service client — bypasses RLS.
+ * Use for server-side inserts and admin operations.
+ * NEVER call from client-side code.
  */
-export function createAdminClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+export function createServiceClient() {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_SECRET_KEY, {
     auth: { persistSession: false },
   });
 }
+
+// Legacy aliases so old import names keep working
+export const createAnonClient  = createPublicClient;
+export const createAdminClient = createServiceClient;
