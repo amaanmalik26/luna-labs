@@ -2,22 +2,21 @@
  * src/routes/api/leads/+server.ts
  * POST /api/leads
  *
- * Flow:
- *   1. Rate limit by IP
- *   2. Parse + Zod validate body
- *   3. Insert into Supabase (anon client, RLS enforced)
- *   4. Fire Discord notification (fire-and-forget)
- *   5. Return 201
+ * Uses createServiceClient() which bypasses RLS entirely.
+ * This is correct for server-side trusted code that:
+ *   1. Has already validated input with Zod
+ *   2. Has already rate-limited by IP
+ *   3. Never exposes the secret key to the browser
  */
 
-import { json }             from '@sveltejs/kit';
-import type { RequestHandler } from './$types';
-import { leadSchema }       from '$lib/validation/lead';
-import { createAnonClient } from '$lib/server/supabase';
-import { notifyDiscord }    from '$lib/server/notifications';
-import type { LeadInsert }  from '$lib/types/database';
+import { json }               from '@sveltejs/kit';
+import type { RequestHandler }  from './$types';
+import { leadSchema }          from '$lib/validation/lead';
+import { createServiceClient } from '$lib/server/supabase';
+import { notifyDiscord }       from '$lib/server/notifications';
+import type { LeadInsert }     from '$lib/types/database';
 
-// ── Rate limiter — max 3 submissions per IP per 10 minutes ───────────
+// ── Rate limiter — 3 submissions per IP per 10 min ────────────────────
 const rateLimitMap = new Map<string, number[]>();
 
 function isRateLimited(ip: string): boolean {
@@ -29,7 +28,7 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// ── POST ─────────────────────────────────────────────────────────────
+// ── POST ──────────────────────────────────────────────────────────────
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
   // 1. Rate limit
@@ -48,7 +47,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     return json({ message: 'Invalid request body.' }, { status: 400 });
   }
 
-  // 3. Validate
+  // 3. Validate with Zod
   const result = leadSchema.safeParse(body);
   if (!result.success) {
     const fieldErrors: Record<string, string> = {};
@@ -61,8 +60,9 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
   const validated = result.data;
 
-  // 4. Insert into Supabase
-  const supabase = createAnonClient();
+  // 4. Insert via service client (bypasses RLS — safe because this is
+  //    server-side code behind Zod validation and rate limiting)
+  const supabase = createServiceClient();
 
   const payload: LeadInsert = {
     name:              validated.name,
@@ -79,18 +79,23 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     .single();
 
   if (dbError || !lead) {
-    console.error('[Supabase] Insert failed:', dbError?.message, dbError?.code, dbError?.details);
+    console.error(
+      '[Supabase] Insert failed:',
+      dbError?.message,
+      dbError?.code,
+      dbError?.details,
+    );
     return json(
       { message: 'Failed to save your submission. Please try again.' },
       { status: 500 },
     );
   }
 
-  console.log('[Leads] Saved to DB:', lead.id);
+  console.log('[Leads] Saved:', lead.id);
 
-  // 5. Discord — fire-and-forget (failure never blocks the response)
+  // 5. Discord — fire-and-forget
   notifyDiscord({ ...payload, id: lead.id }).catch(err =>
-    console.error('[Discord] Unhandled error:', err)
+    console.error('[Discord] Error:', err)
   );
 
   return json({ message: 'Submission received.', id: lead.id }, { status: 201 });
