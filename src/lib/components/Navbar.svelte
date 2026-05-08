@@ -80,7 +80,7 @@
       class="hidden md:flex gap-10 text-[10px] font-bold uppercase tracking-[0.2em] text-luna-text-muted"
       role="list"
     >
-      {#each navLinks as link}
+      {#each navLinks as link (link.href)}
         <a
           href={link.href}
           class="hover:text-luna-neon transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
@@ -147,12 +147,8 @@
       role="dialog"
       aria-label="Mobile navigation menu"
     >
-      {#each navLinks as link}
-        <a
-          href={link.href}
-          onclick={closeMenu}
-          class="text-sm font-bold uppercase tracking-[0.2em] hover:text-luna-neon transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
-        >
+      {#each navLinks as link (link.href)}
+        <a href={link.href} onclick={closeMenu} class="text-sm font-bold uppercase tracking-[0.2em] hover:text-luna-neon transition-colors focus-visible:text-luna-neon focus-visible:outline-none">
           {link.label}
         </a>
       {/each}
