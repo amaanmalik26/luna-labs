@@ -67,7 +67,7 @@
   <div class="luna-glass mx-auto max-w-7xl px-6 py-3 rounded-full flex justify-between items-center">
 
     <!-- ── Brand Logo ─────────────────────────────────────────────── -->
-    <a href="/" class="flex items-center gap-3 group" aria-label="Luna Labs — home">
+    <a href="#" class="flex items-center gap-3 group" aria-label="Luna Labs — home">
       <span class="text-2xl transition-transform group-hover:rotate-12" aria-hidden="true">🌙</span>
       <div class="flex flex-col leading-none">
         <span class="font-black tracking-tighter text-xl">LUNA</span>

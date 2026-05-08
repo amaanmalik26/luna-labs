@@ -1,29 +1,22 @@
-/**
- * src/app.d.ts
- *
- * SvelteKit global TypeScript declarations.
- * Augments the App namespace so event.locals is fully typed
- * across all hooks, load functions, and server endpoints.
- *
- * Add to this file as you introduce new locals in hooks.server.ts.
- */
+// src/app.d.ts
+import type { Session, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '$lib/types/database';
 
-// See https://svelte.dev/docs/kit/types#app.d.ts
 declare global {
   namespace App {
     interface Locals {
+      supabase: SupabaseClient<Database>;
+      session:  Session | null;
       /**
-       * Supabase session — null when unauthenticated.
-       * Populated in hooks.server.ts after Phase 3 auth setup.
-       * Type will be: import('@supabase/supabase-js').Session | null
+       * isAdmin is set in hooks.server.ts after verifying the session
+       * email is in the allowed_admins table. Used by admin layout.server.ts
+       * to gate every admin route without hitting the DB on each request.
        */
-      session: null; // Widen to `Session | null` in Phase 3
+      isAdmin:  boolean;
     }
-
-    // interface Error {}
-    // interface PageData {}
-    // interface PageState {}
-    // interface Platform {}
+    interface PageData {
+      session: Session | null;
+    }
   }
 }
 
