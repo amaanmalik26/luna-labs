@@ -1,3 +1,132 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+@theme {
+  /* ─── Luna Brand Palette ─────────────────────────────────────────── */
+  --color-luna-base:         #0B0914;
+  --color-luna-surface:      rgba(30, 20, 60, 0.4);
+  --color-luna-blue:         #0066FF;
+  --color-luna-neon:         #00F0FF;
+  --color-luna-purple:       #8A2BE2;
+  --color-luna-gold:         #D4AF37;
+
+  /* ─── Semantic Text Tokens ───────────────────────────────────────── */
+  --color-luna-text-main:    #FFFFFF;
+  --color-luna-text-muted:   #A09BBA;
+
+  /* ─── Border Token (single source of truth) ─────────────────────── */
+  --color-luna-border:       rgba(255, 255, 255, 0.06);
+  --color-luna-border-hover: rgba(255, 255, 255, 0.12);
+
+  /* ─── Typography ─────────────────────────────────────────────────── */
+  --font-sans: 'Montserrat', system-ui, sans-serif;
+}
+
+/* ─── Base Layer ────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* lang is set in app.html — this is just a reminder anchor */
+  }
+
+  body {
+    @apply bg-luna-base text-luna-text-main antialiased overflow-x-hidden;
+
+    /*
+     * Static gradient — no animation by default.
+     * The ambient blur divs in each section provide the depth effect
+     * without forcing a full-viewport repaint every frame.
+     * Animation is opt-in via prefers-reduced-motion: no-preference.
+     */
+    background: linear-gradient(125deg, #0B0914 0%, #1E143C 50%, #0B0914 100%);
+    background-size: 400% 400%;
+  }
+
+  /* Animated background — only for users who haven't requested reduced motion */
+  @media (prefers-reduced-motion: no-preference) {
+    body {
+      animation: mesh-gradient 20s ease infinite;
+    }
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────── */
+@keyframes mesh-gradient {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+/* ─── Utility Layer ─────────────────────────────────────────────────── */
+@layer utilities {
+
+  /* Glassmorphism surface — uses the border token */
+  .luna-glass {
+    @apply backdrop-blur-lg shadow-2xl;
+    background: var(--color-luna-surface);
+    border: 1px solid var(--color-luna-border);
+  }
+
+  /* Gradient text — maps the logo palette to text */
+  .text-luna-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      var(--color-luna-neon)   0%,
+      var(--color-luna-purple) 50%,
+      var(--color-luna-blue)   100%
+    );
+  }
+
+  /* Golden accent gradient */
+  .text-gold-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      90deg,
+      #FFD700 0%,
+      #D4AF37 100%
+    );
+  }
+
+  /* Primary CTA — blue → purple on hover */
+  .btn-luna-primary {
+    @apply bg-luna-blue text-white font-bold py-3 px-6 rounded-full
+           transition-all duration-300 cursor-pointer
+           hover:bg-luna-purple active:scale-95;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  .btn-luna-primary:hover {
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
+  }
+  .btn-luna-primary:focus-visible {
+    outline: 2px solid var(--color-luna-neon);
+    outline-offset: 3px;
+  }
+
+  /* Gold accent button */
+  .btn-luna-gold {
+    @apply bg-luna-gold text-luna-base font-bold py-3 px-6 rounded-full
+           transition-all duration-300 cursor-pointer
+           hover:brightness-110 active:scale-95;
+  }
+  .btn-luna-gold:hover {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+  }
+  .btn-luna-gold:focus-visible {
+    outline: 2px solid var(--color-luna-gold);
+    outline-offset: 3px;
+  }
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar-track { background: var(--color-luna-base); }
+::-webkit-scrollbar-thumb {
+  background: rgba(138, 43, 226, 0.2);
+  border-radius: 9999px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 43, 226, 0.4);
+}
