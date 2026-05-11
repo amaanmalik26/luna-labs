@@ -68,10 +68,10 @@
         <li>Lahore, Pakistan</li>
         <li>
           <a
-            href="mailto:lunalabs2026@outlook.com"
+            href="mailto:contact@lunalabs.site"
             class="hover:text-white transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
           >
-            lunalabs2026@outlook.com
+            contact@lunalabs.site
           </a>
         </li>
       </ul>
