@@ -44,7 +44,7 @@ export const leadSchema = z.object({
     .or(z.literal('')),   // allow empty string from the form
 
   service_requested: z.enum(SERVICE_OPTIONS, {
-    errorMap: () => ({ message: 'Please select a service.' }),
+    message: 'Please select a service.',
   }),
 
   message: z

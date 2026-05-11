@@ -22,13 +22,15 @@
   const leads = $derived(data.leads as Lead[]);
 
   // ── Filter state synced to URL params ──────────────────────────
-const initialSearch = data.search ?? '';
-const initialStatus = data.statusFilter ?? 'all';
-const initialService = data.serviceFilter ?? 'all';
+  let search        = $state('');
+  let statusFilter  = $state('all');
+  let serviceFilter = $state('all');
 
-let search        = $state(initialSearch);
-let statusFilter  = $state(initialStatus);
-let serviceFilter = $state(initialService);
+  $effect(() => {
+    search        = data.search ?? '';
+    statusFilter  = data.statusFilter ?? 'all';
+    serviceFilter = data.serviceFilter ?? 'all';
+  });
 
   let searchTimer: ReturnType<typeof setTimeout>;
 

@@ -94,9 +94,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   console.log('[Leads] Saved:', lead.id);
 
   // 5. Discord — fire-and-forget
-  notifyDiscord({ ...payload, id: lead.id }).catch(err =>
-    console.error('[Discord] Error:', err)
-  );
+  await notifyDiscord({ ...payload, id: lead.id });
 
-  return json({ message: 'Submission received.', id: lead.id }, { status: 201 });
+return json({ message: 'Submission received.', id: lead.id }, { status: 201 });
 };
