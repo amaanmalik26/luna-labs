@@ -31,7 +31,7 @@
         <span class="text-2xl font-black tracking-tighter">LUNA LABS</span>
       </a>
       <p class="text-luna-text-muted max-w-sm text-sm leading-relaxed">
-        Digital Arc Architects. Building high-performance systems and premium
+        Digital Architects. Building high-performance systems and premium
         web experiences for the next generation of businesses.
       </p>
     </div>
