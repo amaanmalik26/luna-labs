@@ -88,7 +88,7 @@
       aria-hidden on the em-dash keeps screen readers from reading "dash".
     -->
     <small class="text-[10px] text-white/20 uppercase tracking-[0.5em] not-italic">
-      &copy; {year} Luna Labs <span aria-hidden="true">—</span> Digital Arc Architects
+      &copy; {year} Luna Labs <span aria-hidden="true">—</span> Digital Architects
     </small>
   </div>
 </footer>

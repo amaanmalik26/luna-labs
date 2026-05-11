@@ -11,9 +11,9 @@
 </script>
 
 <svelte:head>
-  <title>Luna Labs — Digital Arc Architects</title>
+  <title>Luna Labs — Digital Architects</title>
   <meta name="description" content="Luna Labs builds premium full-stack platforms, UI/UX systems, and custom SaaS products for businesses ready to scale their digital presence." />
-  <meta property="og:title"       content="Luna Labs — Digital Arc Architects" />
+  <meta property="og:title"       content="Luna Labs — Digital Architects" />
   <meta property="og:description" content="Premium web systems, UI/UX design, and custom SaaS built with precision." />
   <meta property="og:type"        content="website" />
 </svelte:head>
@@ -39,7 +39,7 @@
           </div>
           <div class="flex flex-col">
             <span class="text-luna-gold tracking-[0.4em] font-bold uppercase text-xs">Luna Labs</span>
-            <span class="text-[10px] text-luna-text-muted uppercase tracking-[0.2em]">Digital Arc Architects</span>
+            <span class="text-[10px] text-luna-text-muted uppercase tracking-[0.2em]">Digital Architects</span>
           </div>
         </div>
       </ScrollReveal>
