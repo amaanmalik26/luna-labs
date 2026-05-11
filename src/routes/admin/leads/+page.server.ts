@@ -4,7 +4,7 @@
 import { fail }             from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { createServiceClient } from '$lib/server/supabase';
-import type { LeadStatus }     from '$lib/types/database';
+import type { LeadStatus, ServiceType } from '$lib/types/database';
 
 export const load: PageServerLoad = async ({ url }) => {
   const supabase = createServiceClient();
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ url }) => {
     query = query.eq('status', statusFilter as LeadStatus);
   }
   if (serviceFilter !== 'all') {
-    query = query.eq('service_requested', serviceFilter);
+    query = query.eq('service_requested', serviceFilter as ServiceType);
   }
 
   const { data: leads } = await query;

@@ -48,7 +48,7 @@
   const navLinks = [
     { href: '#services',  label: 'Services'  },
     { href: '#portfolio', label: 'Portfolio' },
-    { href: '#process',   label: 'Process'   },
+    { href: '#quote',     label: 'Quote'     },
   ] as const;
 </script>
 
@@ -64,10 +64,10 @@
   class:pt-6={!isScrolled}
   aria-label="Site navigation"
 >
-  <div class="luna-glass mx-auto max-w-7xl px-6 py-3 rounded-full flex justify-between items-center">
+  <div class="luna-glass mx-auto w-[calc(100%-2rem)] max-w-7xl px-6 py-3 rounded-full flex justify-between items-center">
 
     <!-- ── Brand Logo ─────────────────────────────────────────────── -->
-    <a href="#" class="flex items-center gap-3 group" aria-label="Luna Labs — home">
+    <a href="/" class="flex items-center gap-3 group" aria-label="Luna Labs — home">
       <span class="text-2xl transition-transform group-hover:rotate-12" aria-hidden="true">🌙</span>
       <div class="flex flex-col leading-none">
         <span class="font-black tracking-tighter text-xl">LUNA</span>
@@ -76,27 +76,27 @@
     </a>
 
     <!-- ── Desktop Nav Links ──────────────────────────────────────── -->
-    <div
+    <ul
       class="hidden md:flex gap-10 text-[10px] font-bold uppercase tracking-[0.2em] text-luna-text-muted"
-      role="list"
     >
       {#each navLinks as link (link.href)}
-        <a
-          href={link.href}
-          class="hover:text-luna-neon transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
-          role="listitem"
-        >
-          {link.label}
-        </a>
+        <li>
+          <a
+            href={link.href}
+            class="hover:text-luna-neon transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
+          >
+            {link.label}
+          </a>
+        </li>
       {/each}
-    </div>
+    </ul>
 
     <!-- ── Right Side: CTA + Burger ──────────────────────────────── -->
     <div class="flex items-center gap-4">
       <!-- CTA: hidden on xs to give burger room -->
-      <button class="btn-luna-primary py-2 px-5 text-xs uppercase tracking-tighter font-bold hidden sm:block">
+      <a href="#quote" class="btn-luna-primary py-2 px-5 text-xs uppercase tracking-tighter font-bold hidden sm:block">
         Estimate Project
-      </button>
+      </a>
 
       <!--
         Burger button — mobile only.
@@ -154,9 +154,9 @@
       {/each}
 
       <!-- CTA inside mobile menu — only shows on truly tiny screens -->
-      <button class="btn-luna-primary py-4 w-full text-xs uppercase font-bold sm:hidden">
+      <a href="#quote" onclick={closeMenu} class="btn-luna-primary py-4 w-full text-center text-xs uppercase font-bold sm:hidden">
         Estimate Project
-      </button>
+      </a>
     </div>
   {/if}
 </nav>

@@ -5,6 +5,9 @@
   import PortfolioGrid    from '$lib/components/PortfolioGrid.svelte';
   import RequestQuoteForm from '$lib/components/RequestQuoteForm.svelte';
   import ScrollReveal     from '$lib/components/ScrollReveal.svelte';
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
@@ -95,7 +98,7 @@
 <ServicesGrid />
 
 <!-- ─── Portfolio ───────────────────────────────────────────────────── -->
-<PortfolioGrid />
+<PortfolioGrid projects={data.portfolioProjects} />
 
 <!-- ─── Quote Form ──────────────────────────────────────────────────── -->
 <RequestQuoteForm />

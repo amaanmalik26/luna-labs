@@ -18,6 +18,12 @@
       icon:  'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
       exact: false,
     },
+    {
+      href:  '/admin/portfolio',
+      label: 'Portfolio',
+      icon:  'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5A3.375 3.375 0 0010.125 2.25H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
+      exact: false,
+    },
   ] as const;
 
   // Check active state
@@ -33,8 +39,14 @@
   }
 
   let sidebarOpen = $state(false);
+  const isLoginPage = $derived($page.url.pathname === '/admin/login');
 </script>
 
+{#if isLoginPage}
+  <div class="min-h-screen bg-luna-base text-luna-text-main font-sans">
+    {@render children()}
+  </div>
+{:else}
 <!--
   Admin layout is completely separate from the public layout.
   No Navbar, no Footer, no StarField.
@@ -163,3 +175,4 @@
     </main>
   </div>
 </div>
+{/if}

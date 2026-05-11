@@ -31,7 +31,7 @@
     const result = fieldSchema.safeParse({ [field]: formData[field] });
 
     if (!result.success) {
-      const fieldError = result.error.errors[0];
+      const fieldError = result.error.issues[0];
       errors = { ...errors, [field]: fieldError?.message ?? 'Invalid value.' };
     } else {
       const { [field]: _, ...rest } = errors;
