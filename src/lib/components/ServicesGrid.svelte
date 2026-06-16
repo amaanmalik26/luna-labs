@@ -57,7 +57,7 @@
 
 <section
   id="services"
-  class="relative px-6 lg:px-32 py-32"
+  class="relative overflow-hidden px-6 lg:px-32 py-32"
   style="border-top: 1px solid var(--color-luna-border);"
   aria-labelledby="services-heading"
 >

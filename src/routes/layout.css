@@ -27,6 +27,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
     /* lang is set in app.html — this is just a reminder anchor */
   }
 

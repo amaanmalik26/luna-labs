@@ -8,14 +8,64 @@
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
+
+  const siteUrl = 'https://www.lunalabs.site/';
+  const seoDescription = 'Luna Labs is a software company building custom web apps, SaaS platforms, UI/UX systems, admin dashboards, e-commerce experiences, and full-stack digital products for growing businesses.';
+  const seoKeywords = [
+    'software company',
+    'custom software development',
+    'web development agency',
+    'SaaS development',
+    'full-stack development',
+    'UI UX design',
+    'admin dashboard development',
+    'e-commerce development',
+    'SvelteKit development',
+    'Supabase development',
+    'business website development',
+    'Lahore software company',
+    'Pakistan software company',
+    'Luna Labs',
+  ];
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareCompany',
+    name: 'Luna Labs',
+    url: siteUrl,
+    email: 'lunalabs@gmail.com',
+    areaServed: ['Pakistan', 'United States', 'United Kingdom', 'Global'],
+    description: seoDescription,
+    knowsAbout: [
+      'Custom software development',
+      'SaaS development',
+      'Web application development',
+      'UI/UX design',
+      'SvelteKit',
+      'Supabase',
+      'Full-stack engineering',
+    ],
+    sameAs: [siteUrl],
+  };
 </script>
 
 <svelte:head>
-  <title>Luna Labs — Digital Architects</title>
-  <meta name="description" content="Luna Labs builds premium full-stack platforms, UI/UX systems, and custom SaaS products for businesses ready to scale their digital presence." />
-  <meta property="og:title"       content="Luna Labs — Digital Architects" />
-  <meta property="og:description" content="Premium web systems, UI/UX design, and custom SaaS built with precision." />
-  <meta property="og:type"        content="website" />
+  <title>Luna Labs | Custom Software, SaaS, Web Apps & UI/UX Design</title>
+  <meta name="description" content={seoDescription} />
+  <meta name="keywords" content={seoKeywords.join(', ')} />
+  <meta name="author" content="Luna Labs" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href={siteUrl} />
+  <meta property="og:title" content="Luna Labs | Custom Software, SaaS, Web Apps & UI/UX Design" />
+  <meta property="og:description" content={seoDescription} />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content={siteUrl} />
+  <meta property="og:site_name" content="Luna Labs" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Luna Labs | Custom Software, SaaS, Web Apps & UI/UX Design" />
+  <meta name="twitter:description" content={seoDescription} />
+  <script type="application/ld+json">
+    {JSON.stringify(organizationJsonLd)}
+  </script>
 </svelte:head>
 
 <!-- ─── Hero ───────────────────────────────────────────────────────── -->

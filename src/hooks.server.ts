@@ -23,6 +23,28 @@ import {
 } from '$env/static/private';
 import type { Database } from '$lib/types/database';
 
+const ADMIN_SESSION_COOKIE = 'luna_admin_session_started_at';
+const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
+const ADMIN_SESSION_MAX_AGE_MS = ADMIN_SESSION_MAX_AGE_SECONDS * 1000;
+
+function adminCookieOptions(url: URL) {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: url.protocol === 'https:',
+    path: '/',
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+  };
+}
+
+function isAuthCallback(url: URL): boolean {
+  return (
+    url.searchParams.has('code') ||
+    url.searchParams.has('token_hash') ||
+    url.searchParams.has('access_token')
+  );
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 
   // 1. Create a Supabase client that is scoped to this request.
@@ -66,6 +88,23 @@ export const handle: Handle = async ({ event, resolve }) => {
       .single();
 
     event.locals.isAdmin = !!data;
+  }
+
+  if (event.locals.isAdmin) {
+    const rawStartedAt = event.cookies.get(ADMIN_SESSION_COOKIE);
+    const startedAt = rawStartedAt ? Number(rawStartedAt) : NaN;
+    const now = Date.now();
+
+    if (!Number.isFinite(startedAt) && isAuthCallback(event.url)) {
+      event.cookies.set(ADMIN_SESSION_COOKIE, String(now), adminCookieOptions(event.url));
+    } else if (!Number.isFinite(startedAt) || now - startedAt > ADMIN_SESSION_MAX_AGE_MS) {
+      await event.locals.supabase.auth.signOut();
+      event.cookies.delete(ADMIN_SESSION_COOKIE, { path: '/' });
+      event.locals.session = null;
+      event.locals.isAdmin = false;
+    }
+  } else if (event.cookies.get(ADMIN_SESSION_COOKIE)) {
+    event.cookies.delete(ADMIN_SESSION_COOKIE, { path: '/' });
   }
 
   // 4. Resolve the request — pass auth header for SSR token refresh

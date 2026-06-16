@@ -72,7 +72,8 @@ create policy "admin_update_lead_status"
 --   stack       text[]      not null default '{}',
 --   status      text        not null default 'concept'
 --               check (status in ('live', 'concept', 'in-progress')),
---   gradient    text,
+--   website_url text,
+--   logo_url    text,
 --   year        text,
 --   featured    boolean     not null default false,
 --   sort_order  integer     not null default 0,

@@ -15,6 +15,10 @@
   function stackValue(stack: string[]): string {
     return stack.join(', ');
   }
+
+  function logoPreview(logoUrl: string | null): string {
+    return logoUrl || '/favicon.ico';
+  }
 </script>
 
 <div class="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -43,11 +47,11 @@
   </div>
 {/if}
 
-<div class="grid max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[minmax(320px,380px)_1fr]">
+<div class="grid max-w-7xl grid-cols-1 gap-6 xl:grid-cols-[minmax(320px,390px)_1fr]">
   <section class="luna-glass h-fit rounded-2xl p-6">
     <div class="mb-5">
       <h2 class="text-sm font-black tracking-tight">Add Project</h2>
-      <p class="mt-1 text-xs text-luna-text-muted">New entries can appear on the public portfolio immediately.</p>
+      <p class="mt-1 text-xs text-luna-text-muted">Use a PNG logo URL for the public portfolio card.</p>
     </div>
 
     <form method="POST" action="?/create" use:enhance class="space-y-4">
@@ -78,19 +82,18 @@
       </div>
 
       <div class="field-group">
-        <label for="new-stack" class="field-label">Stack</label>
-        <input id="new-stack" name="stack" class="field-input" placeholder="SvelteKit, Supabase, Stripe" required />
+        <label for="new-website" class="field-label">Website URL</label>
+        <input id="new-website" name="website_url" type="url" class="field-input" placeholder="https://client-site.com" />
       </div>
 
       <div class="field-group">
-        <label for="new-gradient" class="field-label">Gradient</label>
-        <input
-          id="new-gradient"
-          name="gradient"
-          class="field-input font-mono text-xs"
-          value="linear-gradient(135deg, #0066FF 0%, #8A2BE2 100%)"
-          required
-        />
+        <label for="new-logo" class="field-label">Logo PNG URL</label>
+        <input id="new-logo" name="logo_url" type="url" class="field-input" placeholder="https://client-site.com/logo.png" />
+      </div>
+
+      <div class="field-group">
+        <label for="new-stack" class="field-label">Stack</label>
+        <input id="new-stack" name="stack" class="field-input" placeholder="SvelteKit, Supabase, Stripe" required />
       </div>
 
       <div class="field-group">
@@ -101,11 +104,11 @@
       <div class="flex flex-wrap gap-4">
         <label class="toggle-label">
           <input type="checkbox" name="featured" class="toggle-input" />
-          Featured
+          Feature on homepage
         </label>
         <label class="toggle-label">
           <input type="checkbox" name="is_published" class="toggle-input" checked />
-          Published
+          Show on website
         </label>
       </div>
 
@@ -135,7 +138,9 @@
               <p class="text-xs text-luna-text-muted">{project.category}</p>
             </div>
 
-            <div class="h-12 w-full rounded-xl lg:w-56" style="background: {project.gradient};"></div>
+            <div class="logo-preview">
+              <img src={logoPreview(project.logo_url)} alt="" class="max-h-10 max-w-36 object-contain" />
+            </div>
           </div>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -168,16 +173,21 @@
                 <input id={`sort-${project.id}`} name="sort_order" type="number" min="0" max="999" class="field-input" value={project.sort_order} />
               </div>
             </div>
+
+            <div class="field-group">
+              <label for={`website-${project.id}`} class="field-label">Website URL</label>
+              <input id={`website-${project.id}`} name="website_url" type="url" class="field-input" value={project.website_url ?? ''} placeholder="https://client-site.com" />
+            </div>
+
+            <div class="field-group">
+              <label for={`logo-${project.id}`} class="field-label">Logo PNG URL</label>
+              <input id={`logo-${project.id}`} name="logo_url" type="url" class="field-input" value={project.logo_url ?? ''} placeholder="https://client-site.com/logo.png" />
+            </div>
           </div>
 
           <div class="field-group">
             <label for={`stack-${project.id}`} class="field-label">Stack</label>
             <input id={`stack-${project.id}`} name="stack" class="field-input" value={stackValue(project.stack)} required />
-          </div>
-
-          <div class="field-group">
-            <label for={`gradient-${project.id}`} class="field-label">Gradient</label>
-            <input id={`gradient-${project.id}`} name="gradient" class="field-input font-mono text-xs" value={project.gradient} required />
           </div>
 
           <div class="field-group">
@@ -189,11 +199,11 @@
             <div class="flex flex-wrap gap-4">
               <label class="toggle-label">
                 <input type="checkbox" name="featured" class="toggle-input" checked={project.featured} />
-                Featured
+                Feature on homepage
               </label>
               <label class="toggle-label">
                 <input type="checkbox" name="is_published" class="toggle-input" checked={project.is_published} />
-                Published
+                Show on website
               </label>
             </div>
 
@@ -294,5 +304,22 @@
     border-color: var(--color-luna-border);
     background: rgba(255, 255, 255, 0.04);
     color: var(--color-luna-blue);
+  }
+
+  .logo-preview {
+    display: flex;
+    min-height: 48px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid var(--color-luna-border);
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  @media (min-width: 1024px) {
+    .logo-preview {
+      width: 224px;
+    }
   }
 </style>
