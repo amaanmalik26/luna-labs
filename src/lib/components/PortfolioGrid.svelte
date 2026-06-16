@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { fade } from 'svelte/transition';
   import SectionLabel from '$lib/components/SectionLabel.svelte';
   import ScrollReveal from '$lib/components/ScrollReveal.svelte';
   import {
@@ -26,13 +25,31 @@
     },
   };
 
-  let hoveredFeatured = $state(false);
-  let hoveredIdx = $state<number | null>(null);
+  function projectHref(project: PortfolioProject): string {
+    return project.website_url || '#quote';
+  }
+
+  function externalTarget(project: PortfolioProject): '_blank' | undefined {
+    return project.website_url ? '_blank' : undefined;
+  }
+
+  function externalRel(project: PortfolioProject): 'noopener noreferrer' | undefined {
+    return project.website_url ? 'noopener noreferrer' : undefined;
+  }
+
+  function initials(title: string): string {
+    return title
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() ?? '')
+      .join('');
+  }
 </script>
 
 <section
   id="portfolio"
-  class="relative px-6 lg:px-32 py-32"
+  class="relative overflow-hidden px-6 lg:px-32 py-32"
   style="border-top: 1px solid var(--color-luna-border);"
   aria-labelledby="portfolio-heading"
 >
@@ -65,33 +82,14 @@
 
     {#if featured}
       <ScrollReveal distance={40} duration={700}>
-        <article
-          class="portfolio-card luna-glass rounded-2xl overflow-hidden group w-full mb-5"
-          onmouseenter={() => (hoveredFeatured = true)}
-          onmouseleave={() => (hoveredFeatured = false)}
+        <a
+          href={projectHref(featured)}
+          target={externalTarget(featured)}
+          rel={externalRel(featured)}
+          class="portfolio-card luna-glass block rounded-2xl overflow-hidden group w-full mb-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-luna-neon"
           aria-label={`${featured.title} - ${featured.category}`}
         >
-          <div class="relative w-full overflow-hidden" style="aspect-ratio: 21/7;">
-            <div
-              class="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105"
-              style="background: {featured.gradient};"
-            ></div>
-            <div class="absolute inset-0 bg-luna-base/20"></div>
-
-            {#if hoveredFeatured}
-              <div
-                class="absolute inset-0 bg-luna-base/80 backdrop-blur-sm flex items-center justify-center gap-3 flex-wrap p-8"
-                in:fade={{ duration: 200 }}
-                out:fade={{ duration: 150 }}
-              >
-                {#each featured.stack as tech}
-                  <span class="text-sm font-bold text-luna-neon bg-luna-neon/10 border border-luna-neon/20 px-4 py-2 rounded-full">
-                    {tech}
-                  </span>
-                {/each}
-              </div>
-            {/if}
-
+          <div class="logo-stage featured-logo-stage">
             <div class="absolute top-4 right-4">
               <span class="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border {STATUS_CONFIG[featured.status].class}">
                 {STATUS_CONFIG[featured.status].label}
@@ -100,9 +98,19 @@
             <div class="absolute top-4 left-4">
               <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{featured.year}</span>
             </div>
+
+            {#if featured.logo_url}
+              <img
+                src={featured.logo_url}
+                alt={`${featured.title} logo`}
+                class="max-h-28 max-w-[70%] object-contain drop-shadow-[0_20px_60px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-105"
+              />
+            {:else}
+              <div class="logo-fallback text-4xl">{initials(featured.title)}</div>
+            {/if}
           </div>
 
-          <div class="p-8 lg:p-10 space-y-4">
+          <div class="p-8 lg:p-10 space-y-5">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-[10px] text-luna-text-muted uppercase tracking-widest font-bold mb-1.5">
@@ -120,8 +128,15 @@
             <p class="text-luna-text-muted leading-relaxed max-w-3xl">
               {featured.description}
             </p>
+            <div class="flex flex-wrap gap-2" aria-label={`${featured.title} technology stack`}>
+              {#each featured.stack as tech}
+                <span class="text-xs font-bold text-luna-neon bg-luna-neon/10 border border-luna-neon/20 px-3 py-1.5 rounded-full">
+                  {tech}
+                </span>
+              {/each}
+            </div>
           </div>
-        </article>
+        </a>
       </ScrollReveal>
     {:else}
       <div class="luna-glass rounded-2xl p-10 text-center text-luna-text-muted">
@@ -132,33 +147,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {#each supportingProjects as project, i}
         <ScrollReveal delay={i * 120} distance={40} duration={600}>
-          <article
-            class="portfolio-card luna-glass rounded-2xl overflow-hidden group h-full"
-            onmouseenter={() => (hoveredIdx = i)}
-            onmouseleave={() => (hoveredIdx = null)}
+          <a
+            href={projectHref(project)}
+            target={externalTarget(project)}
+            rel={externalRel(project)}
+            class="portfolio-card luna-glass block rounded-2xl overflow-hidden group h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-luna-neon"
             aria-label={`${project.title} - ${project.category}`}
           >
-            <div class="relative w-full overflow-hidden" style="aspect-ratio: 16/7;">
-              <div
-                class="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-105"
-                style="background: {project.gradient};"
-              ></div>
-              <div class="absolute inset-0 bg-luna-base/30"></div>
-
-              {#if hoveredIdx === i}
-                <div
-                  class="absolute inset-0 bg-luna-base/80 backdrop-blur-sm flex items-center justify-center gap-3 flex-wrap p-6"
-                  in:fade={{ duration: 200 }}
-                  out:fade={{ duration: 150 }}
-                >
-                  {#each project.stack as tech}
-                    <span class="text-xs font-bold text-luna-neon bg-luna-neon/10 border border-luna-neon/20 px-3 py-1.5 rounded-full">
-                      {tech}
-                    </span>
-                  {/each}
-                </div>
-              {/if}
-
+            <div class="logo-stage">
               <div class="absolute top-4 right-4">
                 <span class="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border {STATUS_CONFIG[project.status].class}">
                   {STATUS_CONFIG[project.status].label}
@@ -167,9 +163,19 @@
               <div class="absolute top-4 left-4">
                 <span class="text-[10px] font-bold text-white/30 uppercase tracking-widest">{project.year}</span>
               </div>
+
+              {#if project.logo_url}
+                <img
+                  src={project.logo_url}
+                  alt={`${project.title} logo`}
+                  class="max-h-20 max-w-[68%] object-contain drop-shadow-[0_18px_45px_rgba(0,0,0,0.42)] transition-transform duration-500 group-hover:scale-105"
+                />
+              {:else}
+                <div class="logo-fallback text-3xl">{initials(project.title)}</div>
+              {/if}
             </div>
 
-            <div class="p-6 lg:p-8 space-y-3">
+            <div class="p-6 lg:p-8 space-y-4">
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <p class="text-[10px] text-luna-text-muted uppercase tracking-widest font-bold mb-1">{project.category}</p>
@@ -180,8 +186,15 @@
                 </span>
               </div>
               <p class="text-luna-text-muted text-sm leading-relaxed">{project.description}</p>
+              <div class="flex flex-wrap gap-2" aria-label={`${project.title} technology stack`}>
+                {#each project.stack as tech}
+                  <span class="text-[10px] font-bold text-luna-neon bg-luna-neon/10 border border-luna-neon/20 px-2.5 py-1 rounded-full">
+                    {tech}
+                  </span>
+                {/each}
+              </div>
             </div>
-          </article>
+          </a>
         </ScrollReveal>
       {/each}
     </div>
@@ -197,13 +210,43 @@
 
 <style>
   .portfolio-card {
-    transition: box-shadow 0.35s ease, border-color 0.35s ease;
+    transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.3s ease;
   }
   .portfolio-card:hover {
     box-shadow: 0 0 50px rgba(0,240,255,0.06), 0 20px 60px rgba(0,0,0,0.4);
     border-color: var(--color-luna-border-hover);
+    transform: translateY(-2px);
+  }
+  .logo-stage {
+    position: relative;
+    display: flex;
+    min-height: 210px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015)),
+      radial-gradient(circle at 50% 45%, rgba(0,240,255,0.08), transparent 58%),
+      rgba(11,9,20,0.7);
+  }
+  .featured-logo-stage {
+    min-height: 280px;
+  }
+  .logo-fallback {
+    display: flex;
+    width: 96px;
+    height: 96px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 24px;
+    border: 1px solid var(--color-luna-border-hover);
+    background: rgba(255,255,255,0.04);
+    color: var(--color-luna-gold);
+    font-weight: 900;
+    letter-spacing: 0.04em;
   }
   @media (prefers-reduced-motion: reduce) {
     .portfolio-card { transition: none; }
+    .portfolio-card:hover { transform: none; }
   }
 </style>

@@ -45,7 +45,8 @@ export interface Project {
   description:  string;
   stack:        string[];
   status:       ProjectStatus;
-  gradient:     string;
+  website_url:  string | null;
+  logo_url:     string | null;
   year:         string;
   featured:     boolean;
   is_published: boolean;
@@ -79,7 +80,8 @@ export interface ProjectInsert {
   description:  string;
   stack:        string[];
   status:       ProjectStatus;
-  gradient:     string;
+  website_url:  string | null;
+  logo_url:     string | null;
   year:         string;
   featured:     boolean;
   is_published: boolean;
@@ -101,7 +103,8 @@ export interface ProjectUpdate {
   description?:  string;
   stack?:        string[];
   status?:       ProjectStatus;
-  gradient?:     string;
+  website_url?:  string | null;
+  logo_url?:     string | null;
   year?:         string;
   featured?:     boolean;
   is_published?: boolean;

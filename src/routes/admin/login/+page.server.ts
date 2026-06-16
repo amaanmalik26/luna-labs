@@ -16,6 +16,19 @@
 import { fail, redirect }   from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
+const ADMIN_SESSION_COOKIE = 'luna_admin_session_started_at';
+const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
+
+function adminCookieOptions(url: URL) {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: url.protocol === 'https:',
+    path: '/',
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
+  };
+}
+
 export const load: PageServerLoad = async ({ locals }) => {
   // If already logged in as admin, skip the login page
   if (locals.isAdmin) throw redirect(303, '/admin');
@@ -50,7 +63,7 @@ export const actions: Actions = {
   },
 
   // Password login — fallback method
-  password: async ({ request, locals }) => {
+  password: async ({ request, locals, cookies, url }) => {
     const form     = await request.formData();
     const email    = form.get('email')?.toString().trim().toLowerCase();
     const password = form.get('password')?.toString();
@@ -70,6 +83,7 @@ export const actions: Actions = {
     }
 
     // hooks.server.ts will check isAdmin on the next request
+    cookies.set(ADMIN_SESSION_COOKIE, String(Date.now()), adminCookieOptions(url));
     throw redirect(303, '/admin');
   },
 };
