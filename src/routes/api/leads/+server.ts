@@ -9,92 +9,104 @@
  *   3. Never exposes the secret key to the browser
  */
 
-import { json }               from '@sveltejs/kit';
-import type { RequestHandler }  from './$types';
-import { leadSchema }          from '$lib/validation/lead';
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+import { leadSchema } from '$lib/validation/lead';
 import { createServiceClient } from '$lib/server/supabase';
-import { notifyDiscord }       from '$lib/server/notifications';
-import type { LeadInsert }     from '$lib/types/database';
+import { notifyDiscord } from '$lib/server/notifications';
+import type { LeadInsert } from '$lib/types/database';
 
 // ── Rate limiter — 3 submissions per IP per 10 min ────────────────────
 const rateLimitMap = new Map<string, number[]>();
+const MAX_BODY_CHARS = 20_000;
+const HONEYPOT_FIELDS = ['company_website', 'website', 'url'] as const;
 
 function isRateLimited(ip: string): boolean {
-  const now    = Date.now();
-  const window = 10 * 60 * 1000;
-  const hits   = (rateLimitMap.get(ip) ?? []).filter(t => now - t < window);
-  if (hits.length >= 3) return true;
-  rateLimitMap.set(ip, [...hits, now]);
-  return false;
+	const now = Date.now();
+	const window = 10 * 60 * 1000;
+	const hits = (rateLimitMap.get(ip) ?? []).filter((t) => now - t < window);
+	if (hits.length >= 3) return true;
+	rateLimitMap.set(ip, [...hits, now]);
+	return false;
 }
 
 // ── POST ──────────────────────────────────────────────────────────────
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+	// 1. Rate limit
+	if (isRateLimited(getClientAddress())) {
+		return json({ message: 'Too many submissions. Please wait a few minutes.' }, { status: 429 });
+	}
 
-  // 1. Rate limit
-  if (isRateLimited(getClientAddress())) {
-    return json(
-      { message: 'Too many submissions. Please wait a few minutes.' },
-      { status: 429 },
-    );
-  }
+	// 2. Parse body
+	let body: unknown;
+	try {
+		const contentLength = Number(request.headers.get('content-length') ?? 0);
+		if (Number.isFinite(contentLength) && contentLength > MAX_BODY_CHARS) {
+			return json({ message: 'Request body is too large.' }, { status: 413 });
+		}
 
-  // 2. Parse body
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ message: 'Invalid request body.' }, { status: 400 });
-  }
+		const rawBody = await request.text();
+		if (rawBody.length > MAX_BODY_CHARS) {
+			return json({ message: 'Request body is too large.' }, { status: 413 });
+		}
 
-  // 3. Validate with Zod
-  const result = leadSchema.safeParse(body);
-  if (!result.success) {
-    const fieldErrors: Record<string, string> = {};
-    for (const issue of result.error.issues) {
-      const field = String(issue.path[0]);
-      if (!fieldErrors[field]) fieldErrors[field] = issue.message;
-    }
-    return json({ message: 'Validation failed.', errors: fieldErrors }, { status: 422 });
-  }
+		body = JSON.parse(rawBody);
+	} catch {
+		return json({ message: 'Invalid request body.' }, { status: 400 });
+	}
 
-  const validated = result.data;
+	if (body && typeof body === 'object') {
+		const payload = body as Record<string, unknown>;
+		const trippedHoneypot = HONEYPOT_FIELDS.some((field) => {
+			const value = payload[field];
+			return typeof value === 'string' && value.trim().length > 0;
+		});
 
-  // 4. Insert via service client (bypasses RLS — safe because this is
-  //    server-side code behind Zod validation and rate limiting)
-  const supabase = createServiceClient();
+		if (trippedHoneypot) {
+			return json({ message: 'Submission received.' }, { status: 201 });
+		}
+	}
 
-  const payload: LeadInsert = {
-    name:              validated.name,
-    email:             validated.email,
-    business:          validated.business || null,
-    service_requested: validated.service_requested,
-    message:           validated.message,
-  };
+	// 3. Validate with Zod
+	const result = leadSchema.safeParse(body);
+	if (!result.success) {
+		const fieldErrors: Record<string, string> = {};
+		for (const issue of result.error.issues) {
+			const field = String(issue.path[0]);
+			if (!fieldErrors[field]) fieldErrors[field] = issue.message;
+		}
+		return json({ message: 'Validation failed.', errors: fieldErrors }, { status: 422 });
+	}
 
-  const { data: lead, error: dbError } = await supabase
-    .from('leads')
-    .insert(payload)
-    .select('id')
-    .single();
+	const validated = result.data;
 
-  if (dbError || !lead) {
-    console.error(
-      '[Supabase] Insert failed:',
-      dbError?.message,
-      dbError?.code,
-      dbError?.details,
-    );
-    return json(
-      { message: 'Failed to save your submission. Please try again.' },
-      { status: 500 },
-    );
-  }
+	// 4. Insert via service client (bypasses RLS — safe because this is
+	//    server-side code behind Zod validation and rate limiting)
+	const supabase = createServiceClient();
 
-  console.log('[Leads] Saved:', lead.id);
+	const payload: LeadInsert = {
+		name: validated.name,
+		email: validated.email,
+		business: validated.business || null,
+		service_requested: validated.service_requested,
+		message: validated.message
+	};
 
-  // 5. Discord — fire-and-forget
-  await notifyDiscord({ ...payload, id: lead.id });
+	const { data: lead, error: dbError } = await supabase
+		.from('leads')
+		.insert(payload)
+		.select('id')
+		.single();
 
-return json({ message: 'Submission received.', id: lead.id }, { status: 201 });
+	if (dbError || !lead) {
+		console.error('[Supabase] Insert failed:', dbError?.message, dbError?.code, dbError?.details);
+		return json({ message: 'Failed to save your submission. Please try again.' }, { status: 500 });
+	}
+
+	console.log('[Leads] Saved:', lead.id);
+
+	// 5. Discord — fire-and-forget
+	await notifyDiscord({ ...payload, id: lead.id });
+
+	return json({ message: 'Submission received.', id: lead.id }, { status: 201 });
 };

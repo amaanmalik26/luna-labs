@@ -21,3 +21,20 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Local design references and editor integrations
+/_reference/
+/.vscode/
+
+# Keep only the technology logos used by the production UI
+/src/lib/assets/svg/*
+!/src/lib/assets/svg/Firebase.svg
+!/src/lib/assets/svg/GitHub.svg
+!/src/lib/assets/svg/JavaScript.svg
+!/src/lib/assets/svg/Node.js.svg
+!/src/lib/assets/svg/PostgresSQL.svg
+!/src/lib/assets/svg/Svelte.svg
+!/src/lib/assets/svg/Tailwind-CSS.svg
+!/src/lib/assets/svg/TypeScript.svg
+!/src/lib/assets/svg/Vercel.svg
+!/src/lib/assets/svg/Vite.js.svg

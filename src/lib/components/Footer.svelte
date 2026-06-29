@@ -1,94 +1,77 @@
 <script lang="ts">
-  /**
-   * new Date().getFullYear() runs once at SSR render time and is baked
-   * into the HTML. That is correct behaviour — the year doesn't change
-   * while someone is on the page, and it keeps the footer static/cacheable.
-   */
-  const year = new Date().getFullYear();
+	/* eslint-disable svelte/no-navigation-without-resolve -- hashes are appended to resolved routes */
+	import { resolve } from '$app/paths';
+	import { reveal } from '$lib/actions/reveal';
+	import { siteDetails } from '$lib/data/site';
+	import Logo from './Logo.svelte';
 
-  const solutions = [
-    { href: '#services',  label: 'Web Systems'  },
-    { href: '#services',  label: 'UI/UX Design' },
-    { href: '#services',  label: 'Custom SaaS'  },
-  ] as const;
+	const year = new Date().getFullYear();
+	const links = [
+		{ route: '/services', hash: '', label: 'Services' },
+		{ route: '/projects', hash: '', label: 'Projects' },
+		{ route: '/', hash: '#process', label: 'Process' },
+		{ route: '/', hash: '#contact', label: 'Contact' }
+	] as const;
 </script>
 
-<!--
-  <footer> is a landmark element — screen readers announce it as "content info".
-  border uses the luna-border token for consistency with Navbar and glass cards.
--->
-<footer
-  class="relative mt-24 px-6 py-12 lg:px-24 bg-luna-base"
-  style="border-top: 1px solid var(--color-luna-border);"
-  aria-label="Site footer"
->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-7xl mx-auto">
+<footer class="border-t border-zinc-800/50 px-12 py-16 md:px-20">
+	<div class="mx-auto max-w-5xl">
+		<div class="flex flex-col items-start justify-between gap-12 md:flex-row md:items-end">
+			<div use:reveal={{ y: 12, duration: 0.7 }}>
+				<a
+					href={resolve('/')}
+					aria-label="Luna Labs home"
+					class="inline-flex transition-opacity hover:opacity-70"
+				>
+					<Logo class="h-8 w-auto sm:h-9" />
+				</a>
+				<p class="mt-4 max-w-sm text-xs leading-relaxed text-zinc-700">
+					{siteDetails.description}
+				</p>
+				<div class="mt-5 space-y-1 text-xs text-zinc-700">
+					<a
+						class="block transition-colors hover:text-zinc-300"
+						href={`mailto:${siteDetails.email}`}
+					>
+						{siteDetails.email}
+					</a>
+					<p>{siteDetails.location}</p>
+				</div>
+			</div>
 
-    <!-- ── Brand Block ──────────────────────────────────────────── -->
-    <div class="space-y-4 col-span-1 md:col-span-2">
-      <a href="/" class="flex items-center gap-2 group w-fit" aria-label="Luna Labs — home">
-        <span class="text-2xl transition-transform group-hover:rotate-12" aria-hidden="true">🌙</span>
-        <span class="text-2xl font-black tracking-tighter">LUNA LABS</span>
-      </a>
-      <p class="text-luna-text-muted max-w-sm text-sm leading-relaxed">
-        Digital Arc Architects. Building high-performance systems and premium
-        web experiences for the next generation of businesses.
-      </p>
-    </div>
+			<nav
+				use:reveal={{ y: 12, duration: 0.7, delay: 0.08 }}
+				class="flex flex-wrap gap-x-8 gap-y-4 md:justify-end"
+				aria-label="Footer navigation"
+			>
+				{#each links as item (item.label)}
+					<a
+						href={`${resolve(item.route)}${item.hash}`}
+						class="text-[10px] tracking-widest text-zinc-600 uppercase transition-colors hover:text-zinc-300"
+						style:font-family="'Barlow', sans-serif"
+					>
+						{item.label}
+					</a>
+				{/each}
+			</nav>
+		</div>
 
-    <!-- ── Solutions Nav ───────────────────────────────────────── -->
-    <!--
-      <nav> inside <footer> gives screen readers a named navigation landmark.
-      This is separate from the main <nav> in the Navbar component.
-    -->
-    <nav aria-label="Solutions">
-      <h4 class="text-luna-gold text-xs font-bold uppercase tracking-widest mb-4">
-        Solutions
-      </h4>
-      <ul class="text-luna-text-muted text-sm space-y-2">
-        {#each solutions as item}
-          <li>
-            <a
-              href={item.href}
-              class="hover:text-white transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
-            >
-              {item.label}
-            </a>
-          </li>
-        {/each}
-      </ul>
-    </nav>
-
-    <!-- ── Contact Block ───────────────────────────────────────── -->
-    <div>
-      <h4 class="text-luna-gold text-xs font-bold uppercase tracking-widest mb-4">
-        Connect
-      </h4>
-      <ul class="text-luna-text-muted text-sm space-y-2">
-        <li>Lahore, Pakistan</li>
-        <li>
-          <a
-            href="mailto:lunalabs@gmail.com"
-            class="hover:text-white transition-colors focus-visible:text-luna-neon focus-visible:outline-none"
-          >
-            lunalabs@gmail.com
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- ── Copyright Bar ─────────────────────────────────────────── -->
-  <div
-    class="mt-12 pt-8 text-center"
-    style="border-top: 1px solid var(--color-luna-border);"
-  >
-    <!--
-      <small> is semantically correct for legal/copyright text.
-      aria-hidden on the em-dash keeps screen readers from reading "dash".
-    -->
-    <small class="text-[10px] text-white/20 uppercase tracking-[0.5em] not-italic">
-      &copy; {year} Luna Labs <span aria-hidden="true">—</span> Digital Arc Architects
-    </small>
-  </div>
+		<div
+			class="mt-16 flex flex-col items-center justify-between gap-3 border-t border-zinc-800/40 pt-8 md:flex-row"
+		>
+			<p
+				class="text-[10px] tracking-widest text-zinc-800"
+				style:font-family="'JetBrains Mono', monospace"
+			>
+				&copy; {year}
+				{siteDetails.name}. All rights reserved.
+			</p>
+			<p
+				class="text-[10px] tracking-widest text-zinc-800"
+				style:font-family="'JetBrains Mono', monospace"
+			>
+				{siteDetails.tagline}
+			</p>
+		</div>
+	</div>
 </footer>

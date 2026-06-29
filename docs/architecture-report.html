@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Architecture Report — Luna Labs</title>
+		<style>
+			:root {
+				color-scheme: light dark;
+				--bg: #0f172a;
+				--panel: #111827;
+				--panel-2: #1f2937;
+				--text: #e5e7eb;
+				--muted: #94a3b8;
+				--accent: #8b5cf6;
+				--accent-2: #22d3ee;
+				--border: #334155;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				font-family:
+					Inter,
+					Segoe UI,
+					Roboto,
+					Arial,
+					sans-serif;
+				background: linear-gradient(135deg, #020617 0%, #111827 100%);
+				color: var(--text);
+				line-height: 1.65;
+			}
+			main {
+				max-width: 1100px;
+				margin: 0 auto;
+				padding: 32px 20px 80px;
+			}
+			header {
+				background: rgba(17, 24, 39, 0.9);
+				border: 1px solid var(--border);
+				border-radius: 18px;
+				padding: 28px 32px;
+				margin-bottom: 24px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+			}
+			h1,
+			h2,
+			h3 {
+				line-height: 1.2;
+			}
+			h1 {
+				margin: 0 0 8px;
+				font-size: 2rem;
+			}
+			h2 {
+				margin-top: 32px;
+				color: var(--accent-2);
+			}
+			h3 {
+				margin-top: 20px;
+				color: #f8fafc;
+			}
+			p,
+			li {
+				color: var(--text);
+			}
+			.meta {
+				color: var(--muted);
+				font-size: 0.95rem;
+			}
+			section {
+				background: rgba(17, 24, 39, 0.9);
+				border: 1px solid var(--border);
+				border-radius: 16px;
+				padding: 24px 28px;
+				margin-bottom: 18px;
+				box-shadow: 0 8px 25px rgba(0, 0, 0, 0.18);
+			}
+			ul {
+				padding-left: 20px;
+			}
+			code {
+				background: rgba(255, 255, 255, 0.08);
+				padding: 2px 6px;
+				border-radius: 6px;
+			}
+			pre {
+				background: #020617;
+				border: 1px solid var(--border);
+				border-radius: 12px;
+				padding: 14px;
+				overflow-x: auto;
+			}
+			.pill {
+				display: inline-block;
+				margin-right: 8px;
+				margin-bottom: 8px;
+				padding: 6px 10px;
+				border-radius: 999px;
+				background: rgba(139, 92, 246, 0.15);
+				color: #d8b4fe;
+				font-size: 0.9rem;
+			}
+			.grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+				gap: 12px;
+			}
+			.card {
+				background: var(--panel-2);
+				border: 1px solid var(--border);
+				border-radius: 12px;
+				padding: 14px;
+			}
+			a {
+				color: #93c5fd;
+			}
+			footer {
+				text-align: center;
+				color: var(--muted);
+				margin-top: 30px;
+				font-size: 0.95rem;
+			}
+			@media (max-width: 700px) {
+				main {
+					padding: 18px 12px 60px;
+				}
+				header,
+				section {
+					padding: 18px 16px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<header>
+				<h1>Architecture Report — Luna Labs</h1>
+				<p class="meta">Generated on 2026-06-26</p>
+			</header>
+
+			<section>
+				<h2>Executive Summary</h2>
+				<p>
+					Luna Labs is a SvelteKit-based marketing site and internal admin system. The application
+					combines a polished public-facing experience with a server-rendered admin layer that
+					manages leads and portfolio projects through Supabase. The architecture is straightforward
+					and maintainable, with clear separation between public UI, server routes, and data access.
+				</p>
+				<div class="grid">
+					<div class="card">
+						<strong>Public experience</strong>
+						<p>A polished marketing site built with SvelteKit and Svelte 5.</p>
+					</div>
+					<div class="card">
+						<strong>Admin layer</strong>
+						<p>Protected pages for leads, portfolio content, and dashboard operations.</p>
+					</div>
+					<div class="card">
+						<strong>Data layer</strong>
+						<p>Supabase powers persistence, auth, and server-side data access.</p>
+					</div>
+				</div>
+			</section>
+
+			<section>
+				<h2>System Overview</h2>
+				<p>The app is a single SvelteKit application with two main concerns:</p>
+				<ol>
+					<li>Public website experience</li>
+					<li>Protected admin dashboard for content and lead management</li>
+				</ol>
+				<pre><code>flowchart LR
+    User[Visitor / Admin] --> UI[SvelteKit Pages]
+    UI --> PublicRoutes[Public Routes]
+    UI --> AdminRoutes[Admin Routes]
+
+    PublicRoutes --> LeadAPI[/api/leads]
+    LeadAPI --> Supabase[(Supabase DB)]
+    LeadAPI --> Discord[Discord Webhook]
+
+    AdminRoutes --> ServerLoad[Server Load / Actions]
+    ServerLoad --> Supabase
+    ServerLoad --> Auth[Supabase Auth + allowlist]</code></pre>
+			</section>
+
+			<section>
+				<h2>Core Components</h2>
+				<h3>Public application</h3>
+				<ul>
+					<li>Main site shell and navigation live in the routes directory.</li>
+					<li>The homepage renders through the main page entry.</li>
+					<li>Shared UI lives in the reusable component library.</li>
+					<li>The lead capture form is implemented in the request quote form component.</li>
+				</ul>
+
+				<h3>Server-side application layer</h3>
+				<ul>
+					<li>Request handling is routed through SvelteKit server files.</li>
+					<li>Global request initialization is handled in the server hooks entry.</li>
+					<li>Admin route protection is enforced in the admin layout guard.</li>
+				</ul>
+
+				<h3>Data layer</h3>
+				<ul>
+					<li>Supabase clients are created through the server-side client factory.</li>
+					<li>Public portfolio reads use a publishable client.</li>
+					<li>Admin and write operations use a service client with elevated access.</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>Request Flows</h2>
+				<h3>Public lead submission</h3>
+				<ol>
+					<li>A visitor submits the quote form.</li>
+					<li>The form validates locally using a shared Zod schema.</li>
+					<li>The browser sends the payload to the leads API endpoint.</li>
+					<li>
+						The server validates again, applies IP-based rate limiting, and writes to Supabase.
+					</li>
+					<li>A Discord notification is emitted.</li>
+				</ol>
+
+				<h3>Admin access</h3>
+				<ol>
+					<li>A user visits the admin area.</li>
+					<li>The request is intercepted by the server hooks layer.</li>
+					<li>The server checks Supabase auth and whether the email is in the allowlist table.</li>
+					<li>Access is allowed only if the user is verified and approved.</li>
+				</ol>
+			</section>
+
+			<section>
+				<h2>Data and Persistence Model</h2>
+				<p>The app relies on Supabase tables for structured data, including:</p>
+				<ul>
+					<li>leads</li>
+					<li>projects</li>
+					<li>allowed_admins</li>
+				</ul>
+				<p>
+					The database contract is typed in the shared database definitions, and form validation is
+					enforced with Zod schemas for lead and project data.
+				</p>
+			</section>
+
+			<section>
+				<h2>Authentication and Authorization</h2>
+				<h3>Current approach</h3>
+				<ul>
+					<li>Authentication is handled through Supabase.</li>
+					<li>Server-side auth is initialized per request in the hooks layer.</li>
+					<li>Admin access is gated by a server-side layout check.</li>
+				</ul>
+
+				<h3>Strengths</h3>
+				<ul>
+					<li>Auth is centralized instead of duplicated across pages.</li>
+					<li>Admin routing is protected by a shared layout-level guard.</li>
+					<li>
+						Supabase SSR cookies allow server-rendered access without storing session state in the
+						browser.
+					</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>Technical Stack</h2>
+				<div class="grid">
+					<div class="card"><strong>Framework</strong><br />SvelteKit</div>
+					<div class="card"><strong>UI</strong><br />Svelte 5 + Tailwind CSS</div>
+					<div class="card"><strong>Language</strong><br />TypeScript</div>
+					<div class="card"><strong>Data</strong><br />Supabase</div>
+					<div class="card"><strong>Validation</strong><br />Zod</div>
+					<div class="card"><strong>Testing</strong><br />Vitest</div>
+				</div>
+			</section>
+
+			<section>
+				<h2>Architectural Strengths</h2>
+				<ul>
+					<li>
+						Clear separation of concerns between presentation, server routes, validation, and data
+						access.
+					</li>
+					<li>
+						Server-first data access is appropriate for forms, admin editing, and protected
+						operations.
+					</li>
+					<li>Shared validation prevents client/server rule drift.</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>Risks and Technical Debt</h2>
+				<ul>
+					<li>
+						Lead submission rate limiting is process-local and will not scale across multiple
+						instances.
+					</li>
+					<li>Admin access is based on a simple allowlist rather than a richer roles model.</li>
+					<li>
+						Operational visibility is still fairly light for external integrations and failures.
+					</li>
+					<li>Automated test coverage is not yet comprehensive for core workflows.</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2>Recommendations</h2>
+				<ul>
+					<li>Introduce a more durable rate-limiting layer for lead submissions.</li>
+					<li>Add role-based admin permissions if the admin area grows.</li>
+					<li>
+						Increase observability for critical flows such as lead submission and Supabase errors.
+					</li>
+					<li>Expand automated tests around the lead API and portfolio management actions.</li>
+				</ul>
+			</section>
+
+			<footer>
+				Generated from the repository source and verified with the project type-check command.
+			</footer>
+		</main>
+	</body>
+</html>
