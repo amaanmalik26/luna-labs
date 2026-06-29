@@ -1,265 +1,333 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import type { PageData } from './$types';
+	import { resolve } from '$app/paths';
+	import { ArrowUpRight, CheckCircle2, Inbox, Send, UsersRound } from 'lucide-svelte';
+	import type { PageData } from './$types';
 
-  type LeadStatus = 'new' | 'contacted' | 'closed';
+	type LeadStatus = 'new' | 'contacted' | 'closed';
+	type Lead = {
+		id: string;
+		name: string;
+		email: string;
+		service_requested: string;
+		business?: string | null;
+		status: LeadStatus;
+		created_at: string;
+	};
 
-  type Lead = {
-    id: string;
-    name: string;
-    email: string;
-    service_requested: string;
-    business?: string | null;
-    status: LeadStatus;
-    created_at: string;
-    message: string;
-  };
+	let { data }: { data: PageData } = $props();
+	const leads = $derived(data.leads as Lead[]);
+	const maxTrend = $derived(Math.max(...data.trend.map((day) => day.count), 1));
+	const stats = $derived([
+		{ label: 'Total leads', value: data.stats.total, icon: UsersRound },
+		{ label: 'New', value: data.stats.newLeads, icon: Inbox },
+		{ label: 'Contacted', value: data.stats.contacted, icon: Send },
+		{ label: 'Closed', value: data.stats.closed, icon: CheckCircle2 }
+	]);
 
-  let { data }: { data: PageData } = $props();
-  const leads = $derived(data.leads as Lead[]);
+	function barHeight(count: number) {
+		return `${Math.max((count / maxTrend) * 100, 3)}%`;
+	}
 
-  // ── Stat card definitions ────────────────────────────────────────
-  const statCards = $derived([
-    {
-      label:   'Total Leads',
-      value:   data.stats.total,
-      icon:    'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-      colour:  'text-luna-neon',
-      bg:      'rgba(0,240,255,0.08)',
-      border:  'rgba(0,240,255,0.15)',
-    },
-    {
-      label:   'New',
-      value:   data.stats.newLeads,
-      icon:    'M12 4v16m8-8H4',
-      colour:  'text-luna-gold',
-      bg:      'rgba(212,175,55,0.08)',
-      border:  'rgba(212,175,55,0.15)',
-    },
-    {
-      label:   'Contacted',
-      value:   data.stats.contacted,
-      icon:    'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-      colour:  'text-luna-blue',
-      bg:      'rgba(0,102,255,0.08)',
-      border:  'rgba(0,102,255,0.15)',
-    },
-    {
-      label:   'Closed',
-      value:   data.stats.closed,
-      icon:    'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-      colour:  'text-green-400',
-      bg:      'rgba(74,222,128,0.08)',
-      border:  'rgba(74,222,128,0.15)',
-    },
-  ]);
+	function formatDay(iso: string) {
+		return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+	}
 
-  // ── Bar chart helpers ────────────────────────────────────────────
-  const maxTrend = $derived(Math.max(...data.trend.map((d) => d.count), 1));
-
-  function barHeight(count: number): string {
-    return `${Math.max((count / maxTrend) * 100, 4)}%`;
-  }
-
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
-  }
-
-  // ── Status badge ─────────────────────────────────────────────────
-  const STATUS_STYLE = {
-    new:       'bg-luna-gold/15 text-luna-gold border-luna-gold/30',
-    contacted: 'bg-luna-blue/15 text-blue-300 border-blue-500/30',
-    closed:    'bg-green-500/15 text-green-400 border-green-500/30',
-  };
-
-  function timeAgo(iso: string): string {
-    const diff = Date.now() - new Date(iso).getTime();
-    const mins  = Math.floor(diff / 60000);
-    const hours = Math.floor(mins / 60);
-    const days  = Math.floor(hours / 24);
-    if (days > 0)  return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    return `${mins}m ago`;
-  }
+	function timeAgo(iso: string) {
+		const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+		if (minutes >= 1440) return `${Math.floor(minutes / 1440)}d ago`;
+		if (minutes >= 60) return `${Math.floor(minutes / 60)}h ago`;
+		return `${Math.max(minutes, 0)}m ago`;
+	}
 </script>
 
-<div class="space-y-8 max-w-7xl">
-  <div>
-    <h1 class="font-black text-lg tracking-tight">Dashboard</h1>
-    <p class="text-luna-text-muted text-xs">Luna Labs lead overview</p>
-  </div>
+<svelte:head><title>Admin Dashboard | Luna Labs</title></svelte:head>
 
-  <!-- ── Stat cards ───────────────────────────────────────────── -->
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    {#each statCards as card (card.label)}
-      <div
-        class="rounded-2xl p-5 flex flex-col gap-3"
-        style="background: {card.bg}; border: 1px solid {card.border};"
-      >
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-widest text-luna-text-muted">{card.label}</span>
-          <div class="w-8 h-8 rounded-lg flex items-center justify-center {card.colour}" style="background: {card.bg};">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d={card.icon} />
-            </svg>
-          </div>
-        </div>
-        <p class="text-4xl font-black {card.colour}">{card.value}</p>
-      </div>
-    {/each}
-  </div>
+<div class="admin-page">
+	<header class="page-head">
+		<div>
+			<p class="admin-eyebrow">Overview / Live operations</p>
+			<h1 class="admin-heading">Dashboard</h1>
+			<p class="admin-copy">A concise view of inquiries, activity, and service demand.</p>
+		</div>
+		<a class="admin-button" href={resolve('/admin/leads')}>
+			Open leads <ArrowUpRight size={14} />
+		</a>
+	</header>
 
-  <!-- ── Charts row ───────────────────────────────────────────── -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+	<section class="stat-grid" aria-label="Lead statistics">
+		{#each stats as stat (stat.label)}
+			{@const StatIcon = stat.icon}
+			<article class="stat-block">
+				<div>
+					<span class="admin-label">{stat.label}</span><StatIcon size={17} strokeWidth={1.4} />
+				</div>
+				<strong>{stat.value}</strong>
+			</article>
+		{/each}
+	</section>
 
-    <!-- Trend bar chart — spans 2 cols -->
-    <div class="lg:col-span-2 luna-glass rounded-2xl p-6">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="font-black text-sm tracking-tight">Lead Volume</h2>
-          <p class="text-luna-text-muted text-xs mt-0.5">Last 14 days</p>
-        </div>
-        <span class="text-xs text-luna-neon font-bold">{data.stats.total} total</span>
-      </div>
+	<div class="analytics-grid">
+		<section class="admin-panel trend-panel">
+			<header class="panel-head">
+				<div>
+					<p class="admin-label">Lead volume</p>
+					<h2>Last 14 days</h2>
+				</div>
+				<span class="admin-meta">{data.stats.total} total</span>
+			</header>
+			<div class="chart" role="img" aria-label="Lead volume during the last 14 days">
+				{#each data.trend as day, index (day.date)}
+					<div class="bar-column" title={`${formatDay(day.date)}: ${day.count} leads`}>
+						<span>{day.count || ''}</span>
+						<div class:has-data={day.count > 0} style={`height: ${barHeight(day.count)}`}></div>
+						<small>{index % 3 === 0 ? formatDay(day.date) : ''}</small>
+					</div>
+				{/each}
+			</div>
+		</section>
 
-      <!-- Bar chart -->
-      <div class="flex items-end gap-1.5 h-36" role="img" aria-label="Lead volume bar chart, last 14 days">
-        {#each data.trend as day (day.date)}
-          <div class="flex-1 flex flex-col items-center gap-1 group">
-            <div class="relative w-full flex items-end justify-center" style="height: 112px;">
-              <!-- Tooltip -->
-              <div class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-luna-base border border-luna-border-hover rounded-lg px-2 py-1 text-[10px] whitespace-nowrap z-10 pointer-events-none">
-                {day.count} lead{day.count !== 1 ? 's' : ''}
-              </div>
-              <div
-                class="w-full rounded-t-sm transition-all duration-300"
-                style="
-                  height: {barHeight(day.count)};
-                  background: {day.count > 0
-                    ? 'linear-gradient(180deg, rgba(0,240,255,0.8) 0%, rgba(0,102,255,0.5) 100%)'
-                    : 'rgba(255,255,255,0.05)'};
-                "
-              ></div>
-            </div>
-            <!-- Date label — show every 3rd to avoid crowding -->
-            {#if data.trend.indexOf(day) % 3 === 0}
-              <span class="text-[9px] text-white/20 rotate-0">{formatDate(day.date)}</span>
-            {:else}
-              <span class="h-3"></span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
+		<section class="admin-panel service-panel">
+			<header class="panel-head">
+				<div>
+					<p class="admin-label">Demand</p>
+					<h2>By service</h2>
+				</div>
+			</header>
+			<div class="service-list">
+				{#each Object.entries(data.byService).sort((a, b) => b[1] - a[1]) as [service, count] (service)}
+					{@const percentage = data.stats.total ? Math.round((count / data.stats.total) * 100) : 0}
+					<div>
+						<p><span>{service}</span><strong>{count}</strong></p>
+						<div class="meter"><span style={`width: ${percentage}%`}></span></div>
+					</div>
+				{:else}
+					<p class="empty-copy">Service demand will appear after the first inquiry.</p>
+				{/each}
+			</div>
+		</section>
+	</div>
 
-    <!-- Service breakdown donut-style -->
-    <div class="luna-glass rounded-2xl p-6">
-      <div class="mb-6">
-        <h2 class="font-black text-sm tracking-tight">By Service</h2>
-        <p class="text-luna-text-muted text-xs mt-0.5">All time</p>
-      </div>
-
-      <div class="space-y-3">
-        {#each Object.entries(data.byService).sort((a,b) => b[1] - a[1]) as [service, count] (service)}
-          {@const pct = data.stats.total > 0 ? Math.round((count / data.stats.total) * 100) : 0}
-          <div class="space-y-1.5">
-            <div class="flex justify-between text-xs">
-              <span class="text-luna-text-muted font-medium">{service}</span>
-              <span class="font-bold">{count}</span>
-            </div>
-            <div class="h-1.5 rounded-full bg-white/5 overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-700"
-                style="width: {pct}%; background: linear-gradient(90deg, #0066FF, #8A2BE2);"
-              ></div>
-            </div>
-          </div>
-        {/each}
-
-        {#if Object.keys(data.byService).length === 0}
-          <p class="text-luna-text-muted text-xs text-center py-4">No leads yet.</p>
-        {/if}
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Recent leads table ────────────────────────────────────── -->
-  <div class="luna-glass rounded-2xl overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5" style="border-bottom: 1px solid var(--color-luna-border);">
-      <div>
-        <h2 class="font-black text-sm tracking-tight">Recent Leads</h2>
-        <p class="text-luna-text-muted text-xs mt-0.5">Latest 10 submissions</p>
-      </div>
-      <a
-        href={resolve('/admin/leads')}
-        class="text-xs text-luna-neon font-bold hover:text-white transition-colors"
-      >
-        View all →
-      </a>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm" aria-label="Recent leads">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--color-luna-border);">
-            <th class="th-cell">Name</th>
-            <th class="th-cell">Service</th>
-            <th class="th-cell hidden md:table-cell">Business</th>
-            <th class="th-cell">Status</th>
-            <th class="th-cell hidden lg:table-cell text-right">Received</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each leads as lead (lead.id)}
-            <tr
-              class="transition-colors hover:bg-white/2"
-              style="border-bottom: 1px solid var(--color-luna-border);"
-            >
-              <td class="td-cell">
-                <div>
-                  <p class="font-semibold text-white">{lead.name}</p>
-                  <p class="text-luna-text-muted text-xs">{lead.email}</p>
-                </div>
-              </td>
-              <td class="td-cell text-luna-text-muted">{lead.service_requested}</td>
-              <td class="td-cell hidden md:table-cell text-luna-text-muted">
-                {lead.business ?? '—'}
-              </td>
-              <td class="td-cell">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border {STATUS_STYLE[lead.status]}">
-                  {lead.status}
-                </span>
-              </td>
-              <td class="td-cell hidden lg:table-cell text-right text-luna-text-muted text-xs">
-                {timeAgo(lead.created_at)}
-              </td>
-            </tr>
-          {:else}
-            <tr>
-              <td colspan="5" class="text-center py-12 text-luna-text-muted text-sm">
-                No leads yet. Share the site!
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
+	<section class="admin-panel recent-panel">
+		<header class="panel-head">
+			<div>
+				<p class="admin-label">Inbox</p>
+				<h2>Recent leads</h2>
+			</div>
+			<a href={resolve('/admin/leads')}>View all <ArrowUpRight size={13} /></a>
+		</header>
+		<div class="admin-table-wrap">
+			<table class="admin-table">
+				<thead
+					><tr
+						><th>Lead</th><th>Service</th><th class="optional">Business</th><th>Status</th><th
+							class="optional">Received</th
+						></tr
+					></thead
+				>
+				<tbody>
+					{#each leads as lead (lead.id)}
+						<tr>
+							<td><strong>{lead.name}</strong><small>{lead.email}</small></td>
+							<td>{lead.service_requested}</td>
+							<td class="optional">{lead.business ?? '-'}</td>
+							<td><span class="admin-status" data-status={lead.status}>{lead.status}</span></td>
+							<td class="optional muted">{timeAgo(lead.created_at)}</td>
+						</tr>
+					{:else}
+						<tr><td colspan="5" class="empty-cell">No inquiries have arrived yet.</td></tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</section>
 </div>
 
 <style>
-  .th-cell {
-    padding: 12px 20px;
-    text-align: left;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--color-luna-text-muted);
-  }
-  .td-cell {
-    padding: 14px 20px;
-    vertical-align: middle;
-  }
+	.page-head {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: 28px;
+		margin-bottom: 34px;
+	}
+	.page-head h1 {
+		margin-top: 10px;
+	}
+	.page-head .admin-copy {
+		margin-top: 10px;
+	}
+	.stat-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		border: 1px solid var(--admin-line);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.stat-block {
+		min-height: 142px;
+		padding: 20px;
+		border-right: 1px solid var(--admin-line);
+		background: var(--admin-surface);
+	}
+	.stat-block:last-child {
+		border-right: 0;
+	}
+	.stat-block div {
+		display: flex;
+		justify-content: space-between;
+		color: var(--admin-faint);
+	}
+	.stat-block strong {
+		display: block;
+		margin-top: 38px;
+		font-family: 'Barlow', sans-serif;
+		font-size: 38px;
+		font-weight: 500;
+	}
+	.analytics-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.8fr);
+		gap: 16px;
+		margin-top: 16px;
+	}
+	.panel-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 20px;
+		padding: 19px 20px;
+		border-bottom: 1px solid var(--admin-line);
+	}
+	.panel-head h2 {
+		margin-top: 4px;
+		font-family: 'Barlow', sans-serif;
+		font-size: 18px;
+		font-weight: 500;
+	}
+	.panel-head a {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 11px;
+		color: var(--admin-muted);
+	}
+	.chart {
+		display: flex;
+		height: 210px;
+		align-items: end;
+		gap: 7px;
+		padding: 28px 20px 18px;
+	}
+	.bar-column {
+		display: grid;
+		height: 100%;
+		flex: 1;
+		grid-template-rows: 17px 1fr 18px;
+		align-items: end;
+		text-align: center;
+	}
+	.bar-column > span {
+		align-self: start;
+		font:
+			9px 'JetBrains Mono',
+			monospace;
+		color: var(--admin-faint);
+	}
+	.bar-column > div {
+		min-height: 3px;
+		background: #242428;
+		transition: height 300ms ease;
+	}
+	.bar-column > div.has-data {
+		background: #d7d7dc;
+	}
+	.bar-column small {
+		padding-top: 7px;
+		font:
+			8px 'JetBrains Mono',
+			monospace;
+		color: #55555c;
+		white-space: nowrap;
+	}
+	.service-list {
+		display: grid;
+		gap: 20px;
+		padding: 24px 20px;
+	}
+	.service-list p {
+		display: flex;
+		justify-content: space-between;
+		gap: 16px;
+		font-size: 12px;
+		color: var(--admin-muted);
+	}
+	.service-list strong {
+		color: #d4d4d8;
+	}
+	.meter {
+		height: 2px;
+		margin-top: 9px;
+		background: #29292d;
+	}
+	.meter span {
+		display: block;
+		height: 100%;
+		background: #d4d4d8;
+	}
+	.empty-copy {
+		line-height: 1.7;
+	}
+	.recent-panel {
+		margin-top: 16px;
+	}
+	.admin-table strong,
+	.admin-table small {
+		display: block;
+	}
+	.admin-table strong {
+		font-weight: 500;
+		color: #e4e4e7;
+	}
+	.admin-table small,
+	.muted {
+		margin-top: 4px;
+		color: var(--admin-faint);
+	}
+	.empty-cell {
+		height: 120px;
+		text-align: center;
+		color: var(--admin-muted);
+	}
+	@media (max-width: 900px) {
+		.stat-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+		.stat-block:nth-child(2) {
+			border-right: 0;
+		}
+		.stat-block:nth-child(-n + 2) {
+			border-bottom: 1px solid var(--admin-line);
+		}
+		.analytics-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 640px) {
+		.page-head {
+			align-items: start;
+			flex-direction: column;
+		}
+		.page-head .admin-button {
+			width: 100%;
+		}
+		.stat-block {
+			min-height: 120px;
+		}
+		.stat-block strong {
+			margin-top: 25px;
+		}
+		.optional {
+			display: none;
+		}
+	}
 </style>

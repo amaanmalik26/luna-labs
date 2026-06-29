@@ -1,279 +1,368 @@
 <script lang="ts">
-  import { enhance }              from '$app/forms';
-  import { goto }                 from '$app/navigation';
-  import { resolve }              from '$app/paths';
-  import { SvelteURLSearchParams } from 'svelte/reactivity';
-  import type { PageData }        from './$types';
+	/* eslint-disable svelte/no-navigation-without-resolve -- filtered navigation appends runtime query parameters */
+	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { ChevronDown, Mail, Search } from 'lucide-svelte';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import type { PageData } from './$types';
 
-  type LeadStatus = 'new' | 'contacted' | 'closed';
+	type LeadStatus = 'new' | 'contacted' | 'closed';
+	type Lead = {
+		id: string;
+		name: string;
+		email: string;
+		service_requested: string;
+		business?: string | null;
+		status: LeadStatus;
+		created_at: string;
+		message: string;
+	};
 
-  interface Lead {
-    id: string;
-    name: string;
-    email: string;
-    service_requested: string;
-    business?: string | null;
-    status: LeadStatus;
-    created_at: string;
-    message: string;
-  }
+	let { data }: { data: PageData } = $props();
+	const leads = $derived(data.leads as Lead[]);
+	let search = $state('');
+	let statusFilter = $state('all');
+	let serviceFilter = $state('all');
+	let expandedId = $state<string | null>(null);
+	let searchTimer: ReturnType<typeof setTimeout>;
 
-  let { data }: { data: PageData } = $props();
-  const leads = $derived(data.leads as Lead[]);
+	$effect(() => {
+		search = data.search ?? '';
+		statusFilter = data.statusFilter ?? 'all';
+		serviceFilter = data.serviceFilter ?? 'all';
+	});
 
-  // ── Filter state synced to URL params ──────────────────────────
-  let search        = $state('');
-  let statusFilter  = $state('all');
-  let serviceFilter = $state('all');
+	function applyFilters() {
+		const params = new SvelteURLSearchParams();
+		if (statusFilter !== 'all') params.set('status', statusFilter);
+		if (serviceFilter !== 'all') params.set('service', serviceFilter);
+		if (search.trim()) params.set('q', search.trim());
+		goto(`${resolve('/admin/leads')}?${params.toString()}`, { keepFocus: true });
+	}
 
-  $effect(() => {
-    search        = data.search ?? '';
-    statusFilter  = data.statusFilter ?? 'all';
-    serviceFilter = data.serviceFilter ?? 'all';
-  });
+	function queueSearch() {
+		clearTimeout(searchTimer);
+		searchTimer = setTimeout(applyFilters, 350);
+	}
 
-  let searchTimer: ReturnType<typeof setTimeout>;
-
-  function applyFilters() {
-    const params = new SvelteURLSearchParams();
-    if (statusFilter  !== 'all') params.set('status',  statusFilter);
-    if (serviceFilter !== 'all') params.set('service', serviceFilter);
-    if (search.trim())           params.set('q',       search.trim());
-    goto(resolve(`/admin/leads?${params.toString()}`), { keepFocus: true });
-  }
-
-  function onSearchInput() {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(applyFilters, 350);
-  }
-
-  // ── Expanded row for full message ──────────────────────────────
-  let expandedId = $state<string | null>(null);
-
-  // ── Status badge ───────────────────────────────────────────────
-  const STATUS_STYLE = {
-    new:       'bg-luna-gold/15 text-luna-gold border-luna-gold/30',
-    contacted: 'bg-luna-blue/15 text-blue-300 border-blue-500/30',
-    closed:    'bg-green-500/15 text-green-400 border-green-500/30',
-  };
-
-  function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    });
-  }
+	function formatDate(iso: string) {
+		return new Date(iso).toLocaleString('en-GB', {
+			day: '2-digit',
+			month: 'short',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	}
 </script>
 
-<div class="mb-6">
-  <h1 class="font-black text-lg tracking-tight">Leads</h1>
-  <p class="text-luna-text-muted text-xs">{leads.length} result{leads.length !== 1 ? 's' : ''}</p>
-</div>
+<svelte:head><title>Leads | Luna Labs Admin</title></svelte:head>
 
-<div class="space-y-6 max-w-7xl">
+<div class="admin-page">
+	<header class="page-head">
+		<div>
+			<p class="admin-eyebrow">Inquiries / Pipeline</p>
+			<h1 class="admin-heading">Leads</h1>
+			<p class="admin-copy">
+				Review project requests and move each conversation through the pipeline.
+			</p>
+		</div>
+		<span class="result-count">{leads.length.toString().padStart(2, '0')} results</span>
+	</header>
 
-  <!-- ── Filters bar ──────────────────────────────────────────── -->
-  <div class="flex flex-wrap gap-3 items-center">
+	<section class="filter-bar" aria-label="Lead filters">
+		<label class="search-field">
+			<span class="sr-only">Search leads</span>
+			<Search size={15} />
+			<input
+				type="search"
+				bind:value={search}
+				oninput={queueSearch}
+				placeholder="Search name or email"
+			/>
+		</label>
+		<label>
+			<span class="sr-only">Filter by status</span>
+			<select bind:value={statusFilter} onchange={applyFilters}>
+				<option value="all">All statuses</option>
+				<option value="new">New</option>
+				<option value="contacted">Contacted</option>
+				<option value="closed">Closed</option>
+			</select>
+		</label>
+		<label>
+			<span class="sr-only">Filter by service</span>
+			<select bind:value={serviceFilter} onchange={applyFilters}>
+				<option value="all">All services</option>
+				<option value="Web Systems">Web Systems</option>
+				<option value="UI/UX Design">UI/UX Design</option>
+				<option value="Custom SaaS">Custom SaaS</option>
+				<option value="Other">Other</option>
+			</select>
+		</label>
+	</section>
 
-    <!-- Search -->
-    <div class="relative flex-1 min-w-48">
-      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-luna-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <input
-        type="search"
-        placeholder="Search name or email..."
-        bind:value={search}
-        oninput={onSearchInput}
-        class="filter-input pl-9"
-        aria-label="Search leads"
-      />
-    </div>
-
-    <!-- Status filter -->
-    <select
-      bind:value={statusFilter}
-      onchange={applyFilters}
-      class="filter-input"
-      aria-label="Filter by status"
-    >
-      <option value="all">All statuses</option>
-      <option value="new">New</option>
-      <option value="contacted">Contacted</option>
-      <option value="closed">Closed</option>
-    </select>
-
-    <!-- Service filter -->
-    <select
-      bind:value={serviceFilter}
-      onchange={applyFilters}
-      class="filter-input"
-      aria-label="Filter by service"
-    >
-      <option value="all">All services</option>
-      <option value="Web Systems">Web Systems</option>
-      <option value="UI/UX Design">UI/UX Design</option>
-      <option value="Custom SaaS">Custom SaaS</option>
-      <option value="Other">Other</option>
-    </select>
-  </div>
-
-  <!-- ── Leads table ──────────────────────────────────────────── -->
-  <div class="luna-glass rounded-2xl overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm" aria-label="Leads table">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--color-luna-border);">
-            <th class="th-cell">Lead</th>
-            <th class="th-cell hidden md:table-cell">Service</th>
-            <th class="th-cell hidden lg:table-cell">Business</th>
-            <th class="th-cell">Status</th>
-            <th class="th-cell hidden lg:table-cell">Received</th>
-            <th class="th-cell text-right">Message</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each leads as lead (lead.id)}
-            <tr
-              class="transition-colors hover:bg-white/2"
-              style="border-bottom: 1px solid var(--color-luna-border);"
-            >
-              <!-- Name + email -->
-              <td class="td-cell">
-                <p class="font-semibold text-white">{lead.name}</p>
-                <a href={`mailto:${lead.email}`} class="text-luna-text-muted text-xs hover:text-luna-neon transition-colors">
-                  {lead.email}
-                </a>
-              </td>
-
-              <!-- Service -->
-              <td class="td-cell hidden md:table-cell text-luna-text-muted text-xs">
-                {lead.service_requested}
-              </td>
-
-              <!-- Business -->
-              <td class="td-cell hidden lg:table-cell text-luna-text-muted text-xs">
-                {lead.business ?? '—'}
-              </td>
-
-              <!-- Status — inline form update -->
-              <td class="td-cell">
-                <form
-                  method="POST"
-                  action="?/updateStatus"
-                  use:enhance
-                >
-                  <input type="hidden" name="id" value={lead.id} />
-                  <select
-                    name="status"
-                    class={`status-select ${STATUS_STYLE[lead.status]}`}
-                    onchange={(e) => {
-                      const form = (e.target as HTMLElement).closest('form');
-                      form?.requestSubmit();
-                    }}
-                    aria-label={`Update status for ${lead.name}`}
-                  >
-                    <option value="new"       selected={lead.status === 'new'}>New</option>
-                    <option value="contacted" selected={lead.status === 'contacted'}>Contacted</option>
-                    <option value="closed"    selected={lead.status === 'closed'}>Closed</option>
-                  </select>
-                </form>
-              </td>
-
-              <!-- Date -->
-              <td class="td-cell hidden lg:table-cell text-luna-text-muted text-xs">
-                {formatDate(lead.created_at)}
-              </td>
-
-              <!-- Expand message -->
-              <td class="td-cell text-right">
-                <button
-                  onclick={() => expandedId = expandedId === lead.id ? null : lead.id}
-                  class="text-[10px] font-bold uppercase tracking-wider text-luna-text-muted hover:text-luna-neon transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-                  aria-expanded={expandedId === lead.id}
-                >
-                  {expandedId === lead.id ? 'Close' : 'View'}
-                </button>
-              </td>
-            </tr>
-
-            <!-- Expanded message row -->
-            {#if expandedId === lead.id}
-              <tr style="border-bottom: 1px solid var(--color-luna-border);">
-                <td colspan="6" class="px-6 py-5">
-                  <div
-                    class="rounded-xl p-4 text-sm text-luna-text-muted leading-relaxed"
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--color-luna-border);"
-                  >
-                    <p class="text-luna-gold text-[10px] font-bold uppercase tracking-widest mb-2">Message from {lead.name}</p>
-                    {lead.message}
-                  </div>
-                </td>
-              </tr>
-            {/if}
-
-          {:else}
-            <tr>
-              <td colspan="6" class="text-center py-16 text-luna-text-muted text-sm">
-                {#if data.search || data.statusFilter !== 'all' || data.serviceFilter !== 'all'}
-                  No leads match your filters.
-                {:else}
-                  No leads yet. Share the site and they'll appear here.
-                {/if}
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
+	<section class="admin-panel leads-panel">
+		<div class="admin-table-wrap">
+			<table class="admin-table">
+				<thead>
+					<tr
+						><th>Lead</th><th class="optional">Service</th><th class="optional-wide">Business</th
+						><th>Status</th><th class="optional-wide">Received</th><th
+							><span class="sr-only">Message</span></th
+						></tr
+					>
+				</thead>
+				<tbody>
+					{#each leads as lead (lead.id)}
+						<tr class:expanded={expandedId === lead.id}>
+							<td>
+								<strong>{lead.name}</strong>
+								<a href={`mailto:${lead.email}`}><Mail size={11} /> {lead.email}</a>
+							</td>
+							<td class="optional muted">{lead.service_requested}</td>
+							<td class="optional-wide muted">{lead.business ?? '-'}</td>
+							<td>
+								<form method="POST" action="?/updateStatus" use:enhance>
+									<input type="hidden" name="id" value={lead.id} />
+									<label class="status-control" data-status={lead.status}>
+										<span class="sr-only">Update status for {lead.name}</span>
+										<select
+											name="status"
+											onchange={(event) =>
+												(event.currentTarget.closest('form') as HTMLFormElement)?.requestSubmit()}
+										>
+											<option value="new" selected={lead.status === 'new'}>New</option>
+											<option value="contacted" selected={lead.status === 'contacted'}
+												>Contacted</option
+											>
+											<option value="closed" selected={lead.status === 'closed'}>Closed</option>
+										</select>
+									</label>
+								</form>
+							</td>
+							<td class="optional-wide muted date-cell">{formatDate(lead.created_at)}</td>
+							<td class="action-cell">
+								<button
+									onclick={() => (expandedId = expandedId === lead.id ? null : lead.id)}
+									aria-expanded={expandedId === lead.id}
+									aria-label={`View message from ${lead.name}`}
+								>
+									<ChevronDown size={16} class={expandedId === lead.id ? 'rotate' : ''} />
+								</button>
+							</td>
+						</tr>
+						{#if expandedId === lead.id}
+							<tr class="message-row"
+								><td colspan="6"
+									><p class="admin-label">Project note</p>
+									<div>{lead.message}</div></td
+								></tr
+							>
+						{/if}
+					{:else}
+						<tr
+							><td colspan="6" class="empty-cell"
+								>{data.search || data.statusFilter !== 'all' || data.serviceFilter !== 'all'
+									? 'No leads match these filters.'
+									: 'No inquiries have arrived yet.'}</td
+							></tr
+						>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</section>
 </div>
 
 <style>
-  .th-cell {
-    padding: 12px 20px;
-    text-align: left;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--color-luna-text-muted);
-    white-space: nowrap;
-  }
-  .td-cell {
-    padding: 14px 20px;
-    vertical-align: middle;
-  }
-  .filter-input {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--color-luna-border);
-    border-radius: 10px;
-    padding: 9px 12px;
-    color: #fff;
-    font-size: 13px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .filter-input:focus {
-    border-color: rgba(0,240,255,0.35);
-  }
-  .filter-input option { background: #1E143C; }
-  .status-select {
-    appearance: none;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    border: 1px solid;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    font-family: inherit;
-    transition: opacity 0.2s;
-    background: transparent;
-  }
-  .status-select:focus { outline: none; opacity: 0.85; }
-  .status-select option { background: #1E143C; color: #fff; }
+	.page-head {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: 24px;
+		margin-bottom: 32px;
+	}
+	.page-head h1 {
+		margin-top: 10px;
+	}
+	.page-head .admin-copy {
+		margin-top: 10px;
+		max-width: 620px;
+	}
+	.result-count {
+		font:
+			10px 'JetBrains Mono',
+			monospace;
+		letter-spacing: 0.15em;
+		color: var(--admin-faint);
+		text-transform: uppercase;
+	}
+	.filter-bar {
+		display: grid;
+		grid-template-columns: minmax(240px, 1fr) 190px 210px;
+		gap: 8px;
+		margin-bottom: 14px;
+	}
+	.filter-bar label {
+		position: relative;
+	}
+	.filter-bar input,
+	.filter-bar select {
+		width: 100%;
+		height: 42px;
+		border: 1px solid var(--admin-line);
+		border-radius: 4px;
+		background: var(--admin-surface);
+		padding: 0 12px;
+		color: #d4d4d8;
+		font-size: 12px;
+		outline: none;
+	}
+	.filter-bar input:focus,
+	.filter-bar select:focus {
+		border-color: #63636b;
+	}
+	.search-field :global(svg) {
+		position: absolute;
+		top: 13px;
+		left: 13px;
+		color: var(--admin-faint);
+	}
+	.search-field input {
+		padding-left: 38px;
+	}
+	.filter-bar select option {
+		background: #121214;
+	}
+	.leads-panel {
+		overflow: hidden;
+	}
+	.admin-table strong {
+		display: block;
+		font-weight: 500;
+		color: #e4e4e7;
+	}
+	.admin-table td > a {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		margin-top: 5px;
+		font-size: 11px;
+		color: var(--admin-faint);
+	}
+	.admin-table td > a:hover {
+		color: #d4d4d8;
+	}
+	.muted {
+		color: var(--admin-muted);
+	}
+	.date-cell {
+		font-family: 'JetBrains Mono', monospace;
+		font-size: 9px;
+	}
+	.status-control {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+	}
+	.status-control::before {
+		position: absolute;
+		left: 9px;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		content: '';
+		pointer-events: none;
+	}
+	.status-control[data-status='new'] {
+		color: var(--admin-warning);
+	}
+	.status-control[data-status='contacted'] {
+		color: #9faecc;
+	}
+	.status-control[data-status='closed'] {
+		color: var(--admin-positive);
+	}
+	.status-control select {
+		appearance: none;
+		border: 1px solid var(--admin-line-strong);
+		border-radius: 4px;
+		background: #101012;
+		padding: 7px 9px 7px 24px;
+		color: currentColor;
+		font:
+			9px 'JetBrains Mono',
+			monospace;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	.status-control option {
+		background: #121214;
+		color: white;
+	}
+	.action-cell {
+		width: 50px;
+		text-align: right;
+	}
+	.action-cell button {
+		display: inline-flex;
+		padding: 8px;
+		color: var(--admin-faint);
+	}
+	.action-cell :global(svg) {
+		transition: transform 160ms ease;
+	}
+	.action-cell :global(svg.rotate) {
+		transform: rotate(180deg);
+	}
+	tr.expanded {
+		background: #151517;
+	}
+	.message-row td {
+		padding: 0 18px 20px;
+		background: #151517;
+	}
+	.message-row div {
+		margin-top: 9px;
+		border-left: 2px solid #57575f;
+		padding: 3px 0 3px 14px;
+		max-width: 900px;
+		color: #aaaab2;
+		font-size: 13px;
+		line-height: 1.8;
+	}
+	.empty-cell {
+		height: 160px;
+		text-align: center;
+		color: var(--admin-muted);
+	}
+	@media (max-width: 850px) {
+		.filter-bar {
+			grid-template-columns: 1fr 1fr;
+		}
+		.search-field {
+			grid-column: 1 / -1;
+		}
+		.optional-wide {
+			display: none;
+		}
+	}
+	@media (max-width: 600px) {
+		.page-head {
+			align-items: start;
+			flex-direction: column;
+		}
+		.filter-bar {
+			grid-template-columns: 1fr;
+		}
+		.search-field {
+			grid-column: auto;
+		}
+		.optional {
+			display: none;
+		}
+	}
 </style>

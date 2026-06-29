@@ -31,58 +31,55 @@
 import { DISCORD_WEBHOOK_URL } from '$env/static/private';
 
 interface LeadNotification {
-  id:                string;
-  name:              string;
-  email:             string;
-  business:          string | null;
-  service_requested: string;   // FIXED: was `service` in your version — must match DB column
-  message:           string;
+	id: string;
+	name: string;
+	email: string;
+	business: string | null;
+	service_requested: string; // FIXED: was `service` in your version — must match DB column
+	message: string;
 }
 
 export async function notifyDiscord(lead: LeadNotification): Promise<void> {
-  // Guard: if the env var is missing, log clearly and bail.
-  // This surfaces immediately in dev — you'll see it in the terminal.
-  if (!DISCORD_WEBHOOK_URL) {
-    console.error(
-      '[Discord] DISCORD_WEBHOOK_URL is not set in .env. ' +
-      'Check that the variable name matches exactly (no PUBLIC_ prefix).'
-    );
-    return;
-  }
+	// Guard: if the env var is missing, log clearly and bail.
+	// This surfaces immediately in dev — you'll see it in the terminal.
+	if (!DISCORD_WEBHOOK_URL) {
+		console.error(
+			'[Discord] DISCORD_WEBHOOK_URL is not set in .env. ' +
+				'Check that the variable name matches exactly (no PUBLIC_ prefix).'
+		);
+		return;
+	}
 
-  const embed = {
-    title:  '🌙 New Lead — Luna Labs',
-    color:  0x8A2BE2, // luna-purple brand colour
-    fields: [
-      { name: '👤 Name',     value: lead.name,                     inline: true  },
-      { name: '📧 Email',    value: lead.email,                    inline: true  },
-      { name: '🏢 Business', value: lead.business || '—',          inline: true  },
-      { name: '🛠 Service',  value: lead.service_requested,        inline: false },
-      { name: '💬 Message',  value: lead.message.slice(0, 1000),   inline: false },
-    ],
-    footer:    { text: `Lead ID: ${lead.id}` },
-    timestamp: new Date().toISOString(),
-  };
+	const embed = {
+		title: '🌙 New Lead — Luna Labs',
+		color: 0x8a2be2, // luna-purple brand colour
+		fields: [
+			{ name: '👤 Name', value: lead.name, inline: true },
+			{ name: '📧 Email', value: lead.email, inline: true },
+			{ name: '🏢 Business', value: lead.business || '—', inline: true },
+			{ name: '🛠 Service', value: lead.service_requested, inline: false },
+			{ name: '💬 Message', value: lead.message.slice(0, 1000), inline: false }
+		],
+		footer: { text: `Lead ID: ${lead.id}` },
+		timestamp: new Date().toISOString()
+	};
 
-  try {
-    const res = await fetch(DISCORD_WEBHOOK_URL, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ embeds: [embed] }),
-    });
+	try {
+		const res = await fetch(DISCORD_WEBHOOK_URL, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ embeds: [embed] })
+		});
 
-    if (!res.ok) {
-      // Read the error body so you can see exactly what Discord rejected
-      const errorText = await res.text();
-      console.error(
-        `[Discord] Webhook returned ${res.status}:`,
-        errorText
-      );
-    } else {
-      console.log('[Discord] Notification sent for lead:', lead.id);
-    }
-  } catch (err) {
-    // Network-level failure (DNS, timeout, etc.)
-    console.error('[Discord] Network error sending notification:', err);
-  }
+		if (!res.ok) {
+			// Read the error body so you can see exactly what Discord rejected
+			const errorText = await res.text();
+			console.error(`[Discord] Webhook returned ${res.status}:`, errorText);
+		} else {
+			console.log('[Discord] Notification sent for lead:', lead.id);
+		}
+	} catch (err) {
+		// Network-level failure (DNS, timeout, etc.)
+		console.error('[Discord] Network error sending notification:', err);
+	}
 }

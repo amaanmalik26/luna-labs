@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+.site-shell {
+	--font-size: 16px;
+	background: #0d0d0e;
+	color: #f4f4f5;
+	cursor: none;
+	min-height: 100vh;
+}
+
+.site-shell,
+.site-shell * {
+	box-sizing: border-box;
+}
+
+.site-shell a,
+.site-shell button,
+.site-shell input,
+.site-shell textarea,
+.site-shell [data-cursor] {
+	cursor: none;
+}
+
+.site-shell input,
+.site-shell textarea,
+.site-shell button {
+	font: inherit;
+}
+
+.site-shell input,
+.site-shell textarea {
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+@media (pointer: coarse) {
+	.site-shell,
+	.site-shell a,
+	.site-shell button,
+	.site-shell input,
+	.site-shell textarea,
+	.site-shell [data-cursor] {
+		cursor: auto;
+	}
+
+	.site-cursor {
+		display: none;
+	}
+}

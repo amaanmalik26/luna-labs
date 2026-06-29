@@ -1,230 +1,247 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
+	import { enhance } from '$app/forms';
+	import { ArrowRight, CheckCircle2, KeyRound, Mail } from 'lucide-svelte';
+	import Logo from '$lib/components/Logo.svelte';
 
-  let { form } = $props();
+	let { form } = $props();
+	let loginMode = $state<'magic' | 'password'>('magic');
+	let isLoading = $state(false);
 
-  // Toggle between magic link and password login
-  let loginMode = $state<'magic' | 'password'>('magic');
-  let isLoading = $state(false);
+	function loadingEnhance() {
+		isLoading = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			await update();
+			isLoading = false;
+		};
+	}
 </script>
 
 <svelte:head>
-  <title>Admin Login — Luna Labs</title>
-  <meta name="robots" content="noindex, nofollow" />
+	<title>Admin Login | Luna Labs</title>
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<!--
-  Full-screen login — no sidebar layout applies here because the layout
-  guard redirects unauthenticated users here before rendering the shell.
-  We override with a centered flex layout.
--->
-<div class="min-h-screen flex items-center justify-center px-6 relative overflow-hidden bg-luna-base">
+<main class="login-page">
+	<div class="login-brand">
+		<Logo variant="wordmark" class="h-8 w-auto" />
+		<div>
+			<p class="admin-eyebrow">Restricted workspace</p>
+			<h1>Studio operations</h1>
+			<p>Manage inquiries and published work from one focused workspace.</p>
+		</div>
+		<span class="admin-meta">Luna Labs / Admin</span>
+	</div>
 
-  <!-- Background stars / aura — lightweight version without canvas -->
-  <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-    <div class="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[140px]"
-         style="background: radial-gradient(circle, rgba(138,43,226,0.12) 0%, transparent 70%);"></div>
-    <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px]"
-         style="background: radial-gradient(circle, rgba(0,102,255,0.10) 0%, transparent 70%);"></div>
-    <div class="absolute top-[40%] left-[30%] w-[300px] h-[300px] rounded-full blur-[100px]"
-         style="background: radial-gradient(circle, rgba(0,240,255,0.05) 0%, transparent 70%);"></div>
-  </div>
+	<section class="login-panel admin-panel">
+		{#if form?.magicLinkSent}
+			<div class="success-state">
+				<CheckCircle2 size={28} strokeWidth={1.3} />
+				<p class="admin-eyebrow">Link dispatched</p>
+				<h2>Check your inbox.</h2>
+				<p>
+					A secure login link was sent to <strong>{form.email}</strong>. It expires in one hour.
+				</p>
+				<button class="admin-button" onclick={() => window.location.reload()}
+					>Try another email</button
+				>
+			</div>
+		{:else}
+			<header>
+				<p class="admin-eyebrow">Authentication</p>
+				<h2>Sign in</h2>
+				<p>Use an approved Luna Labs administrator account.</p>
+			</header>
 
-  <div class="relative w-full max-w-md">
+			<div class="mode-switch" aria-label="Sign in method">
+				<button class:active={loginMode === 'magic'} onclick={() => (loginMode = 'magic')}
+					><Mail size={14} /> Magic link</button
+				>
+				<button class:active={loginMode === 'password'} onclick={() => (loginMode = 'password')}
+					><KeyRound size={14} /> Password</button
+				>
+			</div>
 
-    <!-- Brand mark -->
-    <div class="text-center mb-10 space-y-3">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl luna-glass mb-2">
-        <span class="text-3xl drop-shadow-[0_0_12px_rgba(138,43,226,0.8)]">🌙</span>
-      </div>
-      <div>
-        <h1 class="text-2xl font-black tracking-tight">Luna Labs</h1>
-        <p class="text-xs text-luna-gold uppercase tracking-[0.3em] font-bold mt-1">Admin Hub</p>
-      </div>
-      <p class="text-luna-text-muted text-sm">Restricted access. Authorised personnel only.</p>
-    </div>
+			{#if form?.error}<div class="admin-notice" data-tone="error" role="alert">
+					{form.error}
+				</div>{/if}
 
-    <!-- Login card -->
-    <div class="luna-glass rounded-2xl p-8 space-y-6">
-
-      <!-- Success state — magic link sent -->
-      {#if form?.magicLinkSent}
-        <div class="text-center space-y-4 py-4">
-          <div class="text-5xl">📬</div>
-          <div>
-            <h2 class="font-black text-xl">Check your inbox.</h2>
-            <p class="text-luna-text-muted text-sm mt-2">
-              We sent a login link to <span class="text-white font-bold">{form.email}</span>.
-              It expires in 1 hour.
-            </p>
-          </div>
-          <p class="text-luna-text-muted text-xs">
-            Didn't receive it? Check your spam folder, or
-            <button
-              onclick={() => { /* form resets on navigation */ window.location.reload(); }}
-              class="text-luna-neon underline underline-offset-2"
-            >
-              try again
-            </button>.
-          </p>
-        </div>
-
-      {:else}
-        <!-- Mode toggle -->
-        <div class="flex rounded-xl overflow-hidden" style="border: 1px solid var(--color-luna-border);">
-          <button
-            type="button"
-            onclick={() => loginMode = 'magic'}
-            class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200"
-            class:bg-luna-blue={loginMode === 'magic'}
-            class:text-white={loginMode === 'magic'}
-            class:text-luna-text-muted={loginMode !== 'magic'}
-          >
-            Magic Link
-          </button>
-          <button
-            type="button"
-            onclick={() => loginMode = 'password'}
-            class="flex-1 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-200"
-            class:bg-luna-blue={loginMode === 'password'}
-            class:text-white={loginMode === 'password'}
-            class:text-luna-text-muted={loginMode !== 'password'}
-          >
-            Password
-          </button>
-        </div>
-
-        <!-- Error -->
-        {#if form?.error}
-          <div
-            class="rounded-xl px-4 py-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm"
-            role="alert"
-          >
-            {form.error}
-          </div>
-        {/if}
-
-        <!-- Magic link form -->
-        {#if loginMode === 'magic'}
-          <form
-            method="POST"
-            action="?/magiclink"
-            use:enhance={() => {
-              isLoading = true;
-              return async ({ update }) => { await update(); isLoading = false; };
-            }}
-            class="space-y-4"
-          >
-            <div>
-              <label for="magic-email" class="login-label">Email address</label>
-              <input
-                id="magic-email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                placeholder="you@yourdomain.com"
-                required
-                class="login-input"
-              />
-            </div>
-            <button
-              type="submit"
-              class="btn-luna-primary w-full py-3.5 text-sm uppercase tracking-wider"
-              disabled={isLoading}
-            >
-              {#if isLoading}
-                Sending link...
-              {:else}
-                Send Magic Link →
-              {/if}
-            </button>
-          </form>
-
-          <p class="text-center text-xs text-luna-text-muted">
-            A one-time login link will be sent to your email.
-            No password required.
-          </p>
-
-        <!-- Password form -->
-        {:else}
-          <form
-            method="POST"
-            action="?/password"
-            use:enhance={() => {
-              isLoading = true;
-              return async ({ update }) => { await update(); isLoading = false; };
-            }}
-            class="space-y-4"
-          >
-            <div>
-              <label for="pw-email" class="login-label">Email address</label>
-              <input
-                id="pw-email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                placeholder="you@yourdomain.com"
-                required
-                class="login-input"
-              />
-            </div>
-            <div>
-              <label for="password" class="login-label">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                placeholder="••••••••"
-                required
-                class="login-input"
-              />
-            </div>
-            <button
-              type="submit"
-              class="btn-luna-primary w-full py-3.5 text-sm uppercase tracking-wider"
-              disabled={isLoading}
-            >
-              {#if isLoading}Signing in...{:else}Sign In →{/if}
-            </button>
-          </form>
-        {/if}
-      {/if}
-
-    </div>
-
-    <!-- Footer note -->
-    <p class="text-center text-[10px] text-white/20 mt-6 uppercase tracking-widest">
-      Luna Labs Admin — Restricted Access
-    </p>
-  </div>
-</div>
+			{#if loginMode === 'magic'}
+				<form method="POST" action="?/magiclink" use:enhance={loadingEnhance}>
+					<label class="admin-field"
+						><span class="admin-label">Email address</span><input
+							class="admin-input"
+							id="magic-email"
+							name="email"
+							type="email"
+							autocomplete="email"
+							placeholder="name@lunalabs.site"
+							required
+						/></label
+					>
+					<button class="admin-button-primary" type="submit" disabled={isLoading}
+						>{isLoading ? 'Sending link...' : 'Send magic link'} <ArrowRight size={14} /></button
+					>
+				</form>
+			{:else}
+				<form method="POST" action="?/password" use:enhance={loadingEnhance}>
+					<label class="admin-field"
+						><span class="admin-label">Email address</span><input
+							class="admin-input"
+							id="password-email"
+							name="email"
+							type="email"
+							autocomplete="email"
+							placeholder="name@lunalabs.site"
+							required
+						/></label
+					>
+					<label class="admin-field"
+						><span class="admin-label">Password</span><input
+							class="admin-input"
+							id="password"
+							name="password"
+							type="password"
+							autocomplete="current-password"
+							placeholder="Your password"
+							required
+						/></label
+					>
+					<button class="admin-button-primary" type="submit" disabled={isLoading}
+						>{isLoading ? 'Signing in...' : 'Sign in'} <ArrowRight size={14} /></button
+					>
+				</form>
+			{/if}
+		{/if}
+	</section>
+</main>
 
 <style>
-  .login-label {
-    display: block;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--color-luna-text-muted);
-    margin-bottom: 6px;
-  }
-  .login-input {
-    width: 100%;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--color-luna-border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    color: #fff;
-    font-size: 14px;
-    font-family: inherit;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .login-input::placeholder { color: rgba(160,155,186,0.4); }
-  .login-input:focus {
-    border-color: rgba(0,240,255,0.4);
-    box-shadow: 0 0 0 3px rgba(0,240,255,0.08);
-  }
+	.login-page {
+		display: grid;
+		min-height: 100vh;
+		grid-template-columns: minmax(280px, 0.9fr) minmax(380px, 1.1fr);
+	}
+	.login-brand {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		border-right: 1px solid var(--admin-line);
+		padding: 48px;
+		background: #0e0e10;
+	}
+	.login-brand > div {
+		max-width: 520px;
+	}
+	.login-brand h1 {
+		margin-top: 15px;
+		font-family: 'Barlow', sans-serif;
+		font-size: clamp(3rem, 6vw, 6.5rem);
+		font-weight: 550;
+		line-height: 0.9;
+		text-transform: uppercase;
+	}
+	.login-brand > div > p:last-child {
+		max-width: 420px;
+		margin-top: 22px;
+		color: var(--admin-muted);
+		font-size: 14px;
+		line-height: 1.8;
+	}
+	.login-brand > .admin-meta {
+		color: var(--admin-faint);
+	}
+	.login-panel {
+		align-self: center;
+		width: min(calc(100% - 48px), 470px);
+		margin: 40px auto;
+		padding: 30px;
+	}
+	.login-panel header {
+		margin-bottom: 24px;
+	}
+	.login-panel h2 {
+		margin-top: 8px;
+		font-family: 'Barlow', sans-serif;
+		font-size: 32px;
+		font-weight: 500;
+	}
+	.login-panel header > p:last-child,
+	.success-state > p:not(.admin-eyebrow) {
+		margin-top: 9px;
+		color: var(--admin-muted);
+		font-size: 13px;
+		line-height: 1.7;
+	}
+	.mode-switch {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		margin-bottom: 18px;
+		border: 1px solid var(--admin-line);
+		border-radius: 4px;
+		padding: 3px;
+	}
+	.mode-switch button {
+		display: flex;
+		min-height: 39px;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		border-radius: 3px;
+		color: var(--admin-muted);
+		font-size: 11px;
+	}
+	.mode-switch button.active {
+		background: #f4f4f5;
+		color: #111113;
+	}
+	.login-panel form {
+		display: grid;
+		gap: 17px;
+	}
+	.login-panel form .admin-button-primary {
+		width: 100%;
+		margin-top: 3px;
+	}
+	.login-panel .admin-notice {
+		margin-bottom: 17px;
+	}
+	.success-state {
+		display: grid;
+		justify-items: start;
+		gap: 12px;
+		padding: 8px;
+	}
+	.success-state :global(svg) {
+		color: var(--admin-positive);
+	}
+	.success-state h2 {
+		margin: 0;
+	}
+	.success-state strong {
+		color: #e4e4e7;
+	}
+	.success-state .admin-button {
+		margin-top: 8px;
+	}
+	@media (max-width: 800px) {
+		.login-page {
+			display: block;
+			padding: 26px 18px;
+		}
+		.login-brand {
+			display: block;
+			border: 0;
+			padding: 18px 4px 30px;
+			background: transparent;
+		}
+		.login-brand > div,
+		.login-brand > .admin-meta {
+			display: none;
+		}
+		.login-panel {
+			width: min(100%, 470px);
+			margin: 20px auto;
+			padding: 24px;
+		}
+	}
 </style>
