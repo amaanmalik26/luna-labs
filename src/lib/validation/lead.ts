@@ -16,42 +16,33 @@
 
 import { z } from 'zod';
 
-export const SERVICE_OPTIONS = [
-  'Web Systems',
-  'UI/UX Design',
-  'Custom SaaS',
-  'Other',
-] as const;
+export const SERVICE_OPTIONS = ['Web Systems', 'UI/UX Design', 'Custom SaaS', 'Other'] as const;
 
 export const leadSchema = z.object({
-  name: z
-    .string()
-    .min(2,  { message: 'Name must be at least 2 characters.'  })
-    .max(100, { message: 'Name must be under 100 characters.'  })
-    .trim(),
+	name: z
+		.string()
+		.min(2, { message: 'Name must be at least 2 characters.' })
+		.max(100, { message: 'Name must be under 100 characters.' })
+		.trim(),
 
-  email: z
-    .string()
-    .email({ message: 'Please enter a valid email address.' })
-    .toLowerCase()
-    .trim(),
+	email: z.string().email({ message: 'Please enter a valid email address.' }).toLowerCase().trim(),
 
-  business: z
-    .string()
-    .max(100, { message: 'Business name must be under 100 characters.' })
-    .trim()
-    .optional()
-    .or(z.literal('')),   // allow empty string from the form
+	business: z
+		.string()
+		.max(100, { message: 'Business name must be under 100 characters.' })
+		.trim()
+		.optional()
+		.or(z.literal('')), // allow empty string from the form
 
-  service_requested: z.enum(SERVICE_OPTIONS, {
-    message: 'Please select a service.',
-  }),
+	service_requested: z.enum(SERVICE_OPTIONS, {
+		message: 'Please select a service.'
+	}),
 
-  message: z
-    .string()
-    .min(10,  { message: 'Message must be at least 10 characters.'   })
-    .max(2000, { message: 'Message must be under 2000 characters.'   })
-    .trim(),
+	message: z
+		.string()
+		.min(10, { message: 'Message must be at least 10 characters.' })
+		.max(2000, { message: 'Message must be under 2000 characters.' })
+		.trim()
 });
 
 // Infer the TypeScript type from the schema — used for form state typing

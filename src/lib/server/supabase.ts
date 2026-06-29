@@ -25,11 +25,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import {
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  SUPABASE_SECRET_KEY,
-} from '$env/static/private';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY } from '$env/static/private';
 import type { Database } from '$lib/types/database';
 
 /**
@@ -37,9 +33,9 @@ import type { Database } from '$lib/types/database';
  * Use for reads that mirror logged-out user access.
  */
 export function createPublicClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: { persistSession: false },
-  });
+	return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+		auth: { persistSession: false }
+	});
 }
 
 /**
@@ -48,11 +44,11 @@ export function createPublicClient() {
  * NEVER call from client-side code.
  */
 export function createServiceClient() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SECRET_KEY, {
-    auth: { persistSession: false },
-  });
+	return createClient<Database>(SUPABASE_URL, SUPABASE_SECRET_KEY, {
+		auth: { persistSession: false }
+	});
 }
 
 // Legacy aliases so old import names keep working
-export const createAnonClient  = createPublicClient;
+export const createAnonClient = createPublicClient;
 export const createAdminClient = createServiceClient;

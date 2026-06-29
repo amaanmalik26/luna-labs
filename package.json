@@ -47,6 +47,8 @@
 	"dependencies": {
 		"@supabase/ssr": "^0.10.2",
 		"@supabase/supabase-js": "^2.105.3",
+		"lucide-svelte": "^1.0.1",
+		"motion": "^12.42.0",
 		"zod": "^4.4.3"
 	}
 }

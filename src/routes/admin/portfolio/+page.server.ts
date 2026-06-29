@@ -1,145 +1,145 @@
-import { fail } from '@sveltejs/kit';
+import { error as kitError, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { createServiceClient } from '$lib/server/supabase';
 import {
-  defaultPortfolioProjects,
-  normalisePortfolioProject,
-  sortPortfolioProjects,
-  type PortfolioProject,
+	defaultPortfolioProjects,
+	normalisePortfolioProject,
+	sortPortfolioProjects,
+	type PortfolioProject
 } from '$lib/portfolio';
-import {
-  flattenProjectErrors,
-  projectFormData,
-  projectSchema,
-} from '$lib/validation/project';
+import { flattenProjectErrors, projectFormData, projectSchema } from '$lib/validation/project';
 import type { ProjectInsert, ProjectUpdate } from '$lib/types/database';
 
 function isMissingProjectsTable(message: string): boolean {
-  return message.toLowerCase().includes('projects');
+	return message.toLowerCase().includes('projects');
 }
 
 async function clearOtherFeaturedProjects(id: string) {
-  const supabase = createServiceClient();
+	const supabase = createServiceClient();
 
-  await supabase
-    .from('projects')
-    .update({ featured: false, updated_at: new Date().toISOString() })
-    .neq('id', id);
+	await supabase
+		.from('projects')
+		.update({ featured: false, updated_at: new Date().toISOString() })
+		.neq('id', id);
 }
 
-export const load: PageServerLoad = async () => {
-  const supabase = createServiceClient();
+export const load: PageServerLoad = async ({ locals }) => {
+	if (!locals.isAdmin) kitError(403, 'Forbidden');
 
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .order('featured', { ascending: false })
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+	const supabase = createServiceClient();
 
-  if (error) {
-    return {
-      projects: defaultPortfolioProjects,
-      tableMissing: isMissingProjectsTable(error.message),
-      loadError: error.message,
-      usingFallback: true,
-    };
-  }
+	const { data, error } = await supabase
+		.from('projects')
+		.select('*')
+		.order('featured', { ascending: false })
+		.order('sort_order', { ascending: true })
+		.order('created_at', { ascending: true });
 
-  const projects = sortPortfolioProjects(
-    (data ?? []).map((project) => normalisePortfolioProject(project as PortfolioProject)),
-  );
+	if (error) {
+		return {
+			projects: defaultPortfolioProjects,
+			tableMissing: isMissingProjectsTable(error.message),
+			loadError: error.message,
+			usingFallback: true
+		};
+	}
 
-  return {
-    projects,
-    tableMissing: false,
-    loadError: '',
-    usingFallback: false,
-  };
+	const projects = sortPortfolioProjects(
+		(data ?? []).map((project) => normalisePortfolioProject(project as PortfolioProject))
+	);
+
+	return {
+		projects,
+		tableMissing: false,
+		loadError: '',
+		usingFallback: false
+	};
 };
 
 export const actions: Actions = {
-  create: async ({ request }) => {
-    const form = await request.formData();
-    const parsed = projectSchema.safeParse(projectFormData(form));
+	create: async ({ request, locals }) => {
+		if (!locals.isAdmin) return fail(403, { intent: 'create', error: 'Forbidden.' });
 
-    if (!parsed.success) {
-      return fail(422, {
-        intent: 'create',
-        errors: flattenProjectErrors(parsed.error),
-      });
-    }
+		const form = await request.formData();
+		const parsed = projectSchema.safeParse(projectFormData(form));
 
-    const payload: ProjectInsert = parsed.data;
-    const supabase = createServiceClient();
+		if (!parsed.success) {
+			return fail(422, {
+				intent: 'create',
+				errors: flattenProjectErrors(parsed.error)
+			});
+		}
 
-    const { data, error } = await supabase
-      .from('projects')
-      .insert(payload)
-      .select('id')
-      .single();
+		const payload: ProjectInsert = parsed.data;
+		const supabase = createServiceClient();
 
-    if (error || !data) {
-      return fail(500, {
-        intent: 'create',
-        error: error?.message ?? 'Create failed.',
-      });
-    }
+		const { data, error } = await supabase.from('projects').insert(payload).select('id').single();
 
-    if (payload.featured) await clearOtherFeaturedProjects(data.id);
+		if (error || !data) {
+			return fail(500, {
+				intent: 'create',
+				error: error?.message ?? 'Create failed.'
+			});
+		}
 
-    return { success: true, intent: 'create' };
-  },
+		if (payload.featured) await clearOtherFeaturedProjects(data.id);
 
-  update: async ({ request }) => {
-    const form = await request.formData();
-    const id = form.get('id')?.toString();
-    const parsed = projectSchema.safeParse(projectFormData(form));
+		return { success: true, intent: 'create' };
+	},
 
-    if (!id) {
-      return fail(422, { intent: 'update', error: 'Missing project id.' });
-    }
+	update: async ({ request, locals }) => {
+		if (!locals.isAdmin) return fail(403, { intent: 'update', error: 'Forbidden.' });
 
-    if (!parsed.success) {
-      return fail(422, {
-        intent: 'update',
-        id,
-        errors: flattenProjectErrors(parsed.error),
-      });
-    }
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
+		const parsed = projectSchema.safeParse(projectFormData(form));
 
-    const payload: ProjectUpdate = {
-      ...parsed.data,
-      updated_at: new Date().toISOString(),
-    };
+		if (!id) {
+			return fail(422, { intent: 'update', error: 'Missing project id.' });
+		}
 
-    const supabase = createServiceClient();
-    const { error } = await supabase.from('projects').update(payload).eq('id', id);
+		if (!parsed.success) {
+			return fail(422, {
+				intent: 'update',
+				id,
+				errors: flattenProjectErrors(parsed.error)
+			});
+		}
 
-    if (error) {
-      return fail(500, { intent: 'update', id, error: error.message });
-    }
+		const payload: ProjectUpdate = {
+			...parsed.data,
+			updated_at: new Date().toISOString()
+		};
 
-    if (payload.featured) await clearOtherFeaturedProjects(id);
+		const supabase = createServiceClient();
+		const { error } = await supabase.from('projects').update(payload).eq('id', id);
 
-    return { success: true, intent: 'update', id };
-  },
+		if (error) {
+			return fail(500, { intent: 'update', id, error: error.message });
+		}
 
-  delete: async ({ request }) => {
-    const form = await request.formData();
-    const id = form.get('id')?.toString();
+		if (payload.featured) await clearOtherFeaturedProjects(id);
 
-    if (!id) {
-      return fail(422, { intent: 'delete', error: 'Missing project id.' });
-    }
+		return { success: true, intent: 'update', id };
+	},
 
-    const supabase = createServiceClient();
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+	delete: async ({ request, locals }) => {
+		if (!locals.isAdmin) return fail(403, { intent: 'delete', error: 'Forbidden.' });
 
-    if (error) {
-      return fail(500, { intent: 'delete', id, error: error.message });
-    }
+		const form = await request.formData();
+		const id = form.get('id')?.toString();
 
-    return { success: true, intent: 'delete', id };
-  },
+		if (!id) {
+			return fail(422, { intent: 'delete', error: 'Missing project id.' });
+		}
+
+		const supabase = createServiceClient();
+		const { error } = await supabase.from('projects').delete().eq('id', id);
+
+		if (error) {
+			return fail(500, { intent: 'delete', id, error: error.message });
+		}
+
+		return { success: true, intent: 'delete', id };
+	}
 };
