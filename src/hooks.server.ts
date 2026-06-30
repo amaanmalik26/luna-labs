@@ -26,11 +26,11 @@ const ADMIN_SESSION_MAX_AGE_MS = ADMIN_SESSION_MAX_AGE_SECONDS * 1000;
 const SECURITY_HEADERS = {
 	'Content-Security-Policy': [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline'",
+		"script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
 		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com data:",
 		"img-src 'self' data: https:",
-		"connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* ws://127.0.0.1:*",
+		"connect-src 'self' https://*.supabase.co wss://*.supabase.co ws://localhost:* ws://127.0.0.1:* https://vitals.vercel-insights.com",
 		"frame-src 'self' https://signature-fitness-alpha.vercel.app https://motornity.pk",
 		"object-src 'none'",
 		"base-uri 'self'",
