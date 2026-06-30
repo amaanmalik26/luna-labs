@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
 	import { page } from '$app/stores';
+	import { injectAnalytics } from '@vercel/analytics/sveltekit';
 	import Cursor from '$lib/components/Cursor.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import '$lib/styles/site.css';
 	import './layout.css';
+
+	injectAnalytics({ mode: dev ? 'development' : 'production' });
 
 	let { children } = $props();
 	const isAdminRoute = $derived($page.url.pathname.startsWith('/admin'));
